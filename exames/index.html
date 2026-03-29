@@ -267,9 +267,27 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
         Entrar
       </button>
     </form>
+    <div id="biometric-divider" style="display:none; margin:18px 0 14px; position:relative; text-align:center;">
+      <hr style="border:none; border-top:1px solid var(--border);">
+      <span style="position:absolute; top:-8px; left:50%; transform:translateX(-50%); background:var(--surface); padding:0 12px; font-size:11px; color:var(--muted);">ou</span>
+    </div>
+    <button id="biometric-btn" onclick="biometricLogin()" style="display:none; width:100%; padding:12px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; font-weight:600; cursor:pointer; transition:all 0.15s; gap:8px; align-items:center; justify-content:center;">
+      <span style="font-size:18px; vertical-align:middle; margin-right:6px;">🆔</span> Entrar com Face ID
+    </button>
     <a href="#" onclick="forgotPassword(); return false;" style="display:inline-block; margin-top:14px; font-size:12px; color:var(--accent); text-decoration:none;">Esqueci minha senha</a>
     <br>
     <a href="../" style="display:inline-block; margin-top:8px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
+  </div>
+</div>
+
+<!-- BIOMETRIC ENROLLMENT MODAL -->
+<div id="biometric-modal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(0,0,0,0.4); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:var(--surface); border-radius:16px; padding:36px 32px; width:100%; max-width:340px; box-shadow:var(--shadow-lg); text-align:center;">
+    <div style="font-size:48px; margin-bottom:10px;">🆔</div>
+    <h2 style="font-family:'Playfair Display',serif; font-size:20px; font-weight:600; margin-bottom:8px;">Ativar Face ID?</h2>
+    <p style="font-size:13px; color:var(--muted); line-height:1.6; margin-bottom:22px;">Use biometria (Face ID / Touch ID) para entrar mais rapido nos proximos acessos.</p>
+    <button onclick="enrollBiometric()" style="width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer; margin-bottom:8px;">Ativar</button>
+    <button onclick="dismissBiometricModal()" style="width:100%; padding:10px; background:transparent; color:var(--muted); border:none; font-family:'Syne',sans-serif; font-size:13px; cursor:pointer;">Agora nao</button>
   </div>
 </div>
 
@@ -460,6 +478,102 @@ function sha256(str) {
     return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,'0')).join('');
   });
 }
+// ── WebAuthn / Biometric helpers ──
+const WEBAUTHN_KEY = 'saude_av_webauthn';
+const RP_ID = location.hostname;
+const RP_NAME = 'Saude AV';
+const USER_ID = new Uint8Array([1,2,3,4,5,6,7,8]);
+
+function webauthnAvailable() {
+  return window.PublicKeyCredential && typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === 'function';
+}
+
+function hasSavedCredential() {
+  return !!localStorage.getItem(WEBAUTHN_KEY);
+}
+
+function bufToB64(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))); }
+function b64ToBuf(b64) { const s = atob(b64); const buf = new Uint8Array(s.length); for(let i=0;i<s.length;i++) buf[i]=s.charCodeAt(i); return buf; }
+
+async function enrollBiometric() {
+  try {
+    const credential = await navigator.credentials.create({
+      publicKey: {
+        rp: { name: RP_NAME, id: RP_ID },
+        user: { id: USER_ID, name: 'andrenvasc@gmail.com', displayName: 'Andre Vasconcelos' },
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'preferred' },
+        timeout: 60000
+      }
+    });
+    localStorage.setItem(WEBAUTHN_KEY, bufToB64(credential.rawId));
+    dismissBiometricModal();
+    // small feedback
+    const gate = document.getElementById('login-gate');
+    if (gate.style.display === 'none') {
+      // already logged in, just confirm
+      alert('Face ID ativado com sucesso! No proximo acesso, use biometria.');
+    }
+  } catch(err) {
+    console.warn('Biometric enrollment failed:', err);
+    alert('Nao foi possivel ativar biometria. Tente novamente.');
+  }
+}
+
+async function biometricLogin() {
+  try {
+    const credId = localStorage.getItem(WEBAUTHN_KEY);
+    if (!credId) return;
+    const assertion = await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rpId: RP_ID,
+        allowCredentials: [{ type: 'public-key', id: b64ToBuf(credId), transports: ['internal'] }],
+        userVerification: 'required',
+        timeout: 60000
+      }
+    });
+    // If we get here, biometric verification succeeded
+    if (assertion) {
+      sessionStorage.setItem('saude_auth', '1');
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('app-main').style.display = '';
+    }
+  } catch(err) {
+    console.warn('Biometric login failed:', err);
+    document.getElementById('login-error').textContent = 'Biometria falhou. Use email e senha.';
+  }
+}
+
+function showBiometricButton() {
+  if (hasSavedCredential()) {
+    document.getElementById('biometric-divider').style.display = 'block';
+    document.getElementById('biometric-btn').style.display = 'flex';
+  }
+}
+
+function offerBiometricEnrollment() {
+  if (hasSavedCredential()) return; // already enrolled
+  webauthnAvailable() && PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().then(ok => {
+    if (ok) {
+      const modal = document.getElementById('biometric-modal');
+      modal.style.display = 'flex';
+    }
+  });
+}
+
+function dismissBiometricModal() {
+  document.getElementById('biometric-modal').style.display = 'none';
+}
+
+// ── Login ──
+function grantAccess() {
+  sessionStorage.setItem('saude_auth', '1');
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('app-main').style.display = '';
+}
+
 function tryLogin(e) {
   e.preventDefault();
   const user = document.getElementById('login-user').value.trim();
@@ -467,9 +581,9 @@ function tryLogin(e) {
   if (!user || !pass) { document.getElementById('login-error').textContent = 'Preencha todos os campos.'; return false; }
   sha256(user.toLowerCase() + ':' + pass).then(hash => {
     if (hash === AUTH_HASH) {
-      sessionStorage.setItem('saude_auth', '1');
-      document.getElementById('login-gate').style.display = 'none';
-      document.getElementById('app-main').style.display = '';
+      grantAccess();
+      // Offer biometric enrollment after successful password login
+      setTimeout(() => offerBiometricEnrollment(), 600);
     } else {
       document.getElementById('login-error').textContent = 'Usuario ou senha incorretos.';
       document.getElementById('login-pass').value = '';
@@ -489,6 +603,10 @@ if (sessionStorage.getItem('saude_auth') === '1') {
     document.getElementById('app-main').style.display = '';
   });
 }
+// Show biometric button on login screen if enrolled
+document.addEventListener('DOMContentLoaded', () => {
+  if (webauthnAvailable()) showBiometricButton();
+});
 // ═══════════════════════════════════════════════════════
 // DATA
 // ═══════════════════════════════════════════════════════
