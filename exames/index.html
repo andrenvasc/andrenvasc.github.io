@@ -257,7 +257,7 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
     <h1 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:600; color:var(--text); margin-bottom:6px;">Saude AV</h1>
     <p style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:28px;">Area restrita — Historico de Exames</p>
     <form id="login-form" onsubmit="return tryLogin(event)">
-      <input id="login-user" type="text" placeholder="Usuario" autocomplete="username"
+      <input id="login-user" type="email" placeholder="Email" autocomplete="username"
         style="width:100%; padding:10px 14px; margin-bottom:10px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none;">
       <input id="login-pass" type="password" placeholder="Senha" autocomplete="current-password"
         style="width:100%; padding:10px 14px; margin-bottom:6px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none;">
@@ -267,7 +267,9 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
         Entrar
       </button>
     </form>
-    <a href="../" style="display:inline-block; margin-top:16px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
+    <a href="#" onclick="forgotPassword(); return false;" style="display:inline-block; margin-top:14px; font-size:12px; color:var(--accent); text-decoration:none;">Esqueci minha senha</a>
+    <br>
+    <a href="../" style="display:inline-block; margin-top:8px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
   </div>
 </div>
 
@@ -451,7 +453,7 @@ O que você gostaria de explorar?</div>
 <script>
 // ═══════════════════════════════════════════════════════
 // LOGIN GATE
-const AUTH_HASH = '9b6149b0db29aa16e099af8b6bf27ebc0e51ec21718e5ed57d0cae9ad4a46dd0';
+const AUTH_HASH = '70fb95ac6eb3394493bb325b0b985b5d7fa0167bd5db4afdba5686dcd01786b3';
 function sha256(str) {
   const buf = new TextEncoder().encode(str);
   return crypto.subtle.digest('SHA-256', buf).then(h => {
@@ -474,6 +476,11 @@ function tryLogin(e) {
     }
   });
   return false;
+}
+function forgotPassword() {
+  const subject = encodeURIComponent('Saude AV — Redefinir senha');
+  const body = encodeURIComponent('Oi Andre,\n\nVoce solicitou redefinicao de senha do Saude AV.\n\nLogin: andrenvasc@gmail.com\nSenha atual: [consulte seus registros]\n\nAcesse: https://andrenvasc.github.io/exames/');
+  window.location.href = 'mailto:andrenvasc@gmail.com?subject=' + subject + '&body=' + body;
 }
 // Auto-login if already authenticated this session
 if (sessionStorage.getItem('saude_auth') === '1') {
