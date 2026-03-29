@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saúde AV — Histórico de Exames</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Syne:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f5f6fa;
+  --surface: #ffffff;
+  --surface2: #f0f2f7;
+  --border: #e2e5ee;
+  --border2: #d0d5e1;
+  --text: #1e2330;
+  --muted: #8a92a6;
+  --muted2: #5c6478;
+  --accent: #3b7ddd;
+  --accent2: #2b5ea7;
+  --accent-glow: rgba(59,125,221,0.08);
+  --blood: #d64545;
+  --blood-bg: rgba(214,69,69,0.08);
+  --imaging: #0d9488;
+  --imaging-bg: rgba(13,148,136,0.08);
+  --cardio: #7c3aed;
+  --cardio-bg: rgba(124,58,237,0.08);
+  --hosp: #d97706;
+  --hosp-bg: rgba(217,119,6,0.08);
+  --green: #16a34a;
+  --green-bg: rgba(22,163,74,0.08);
+  --warn: #ea580c;
+  --warn-bg: rgba(234,88,12,0.07);
+  --radius: 12px;
+  --r-sm: 8px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+  --shadow-lg: 0 10px 32px rgba(0,0,0,0.1), 0 2px 8px rgba(0,0,0,0.05);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; line-height: 1.65; -webkit-font-smoothing: antialiased; }
+
+/* LAYOUT */
+.app { display: flex; min-height: 100vh; }
+
+/* SIDEBAR */
+.sidebar { width: 232px; flex-shrink: 0; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto; box-shadow: 2px 0 8px rgba(0,0,0,0.03); }
+.logo { padding: 0 20px 24px; border-bottom: 1px solid var(--border); }
+.logo-title { font-family: 'Playfair Display', serif; font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.logo-sub { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); margin-top: 4px; letter-spacing: 0.5px; }
+.nav { padding: 14px 10px; flex: 1; }
+.nav-section { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); padding: 10px 10px 4px; }
+.nav-item { display: flex; align-items: center; gap: 9px; padding: 9px 12px; border-radius: var(--r-sm); cursor: pointer; color: var(--muted2); font-size: 13px; font-weight: 500; transition: all 0.15s; margin-bottom: 1px; border: 1px solid transparent; }
+.nav-item:hover { color: var(--text); background: var(--surface2); }
+.nav-item.active { color: var(--accent); background: var(--accent-glow); border-color: rgba(79,156,249,0.2); }
+.nav-icon { font-size: 15px; width: 18px; text-align: center; }
+.sidebar-stats { padding: 14px 20px; border-top: 1px solid var(--border); }
+.s-stat { margin-bottom: 10px; }
+.s-stat-num { font-family: 'Playfair Display', serif; font-size: 24px; color: var(--accent); line-height: 1; }
+.s-stat-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+
+/* CONTENT */
+.content { flex: 1; overflow-y: auto; min-width: 0; }
+.page { display: none; padding: 28px 32px 60px; max-width: 960px; }
+.page.active { display: block; }
+.page-header { margin-bottom: 24px; display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.page-title { font-family: 'Playfair Display', serif; font-size: 28px; font-weight: 600; line-height: 1.2; color: var(--text); }
+.page-title em { font-style: italic; color: var(--accent); }
+
+/* CONTROLS */
+.controls { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; align-items: center; }
+.search-wrap { position: relative; flex: 1; min-width: 160px; }
+.search-wrap svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
+.search-input { width: 100%; padding: 8px 12px 8px 32px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.2s; }
+.search-input::placeholder { color: var(--muted); }
+.search-input:focus { border-color: var(--accent); }
+.filter-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.pill { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); font-size: 11px; font-weight: 600; color: var(--muted2); cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.pill:hover { border-color: var(--accent); color: var(--accent); }
+.pill.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pill.active-sangue { background: var(--blood); color: #fff; border-color: var(--blood); }
+.pill.active-imagem { background: var(--imaging); color: #fff; border-color: var(--imaging); }
+.pill.active-cardio { background: var(--cardio); color: #fff; border-color: var(--cardio); }
+.pill.active-internacao { background: var(--hosp); color: #fff; border-color: var(--hosp); }
+.sort-select { padding: 7px 10px; border-radius: var(--r-sm); border: 1px solid var(--border); background: var(--surface2); font-family: 'Syne', sans-serif; font-size: 12px; color: var(--muted2); outline: none; }
+.btn-primary { display: flex; align-items: center; gap: 6px; padding: 8px 14px; background: var(--accent); color: #fff; border: none; border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+.btn-primary:hover { background: #3a87f0; transform: translateY(-1px); }
+
+/* YEAR GROUP */
+.year-group { margin-bottom: 28px; }
+.year-label { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 10px; }
+.year-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* CARDS */
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 8px; transition: border-color 0.2s, box-shadow 0.2s; overflow: hidden; animation: fadeUp 0.3s ease both; box-shadow: var(--shadow-sm); }
+@keyframes fadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+.card:hover { border-color: var(--border2); box-shadow: var(--shadow-md); }
+.card-header { display: grid; grid-template-columns: 3px 1fr auto; cursor: pointer; }
+.card-stripe { border-radius: var(--radius) 0 0 var(--radius); }
+.stripe-sangue { background: var(--blood); }
+.stripe-imagem { background: var(--imaging); }
+.stripe-cardio { background: var(--cardio); }
+.stripe-internacao { background: var(--hosp); }
+.card-main { padding: 13px 15px; display: flex; align-items: center; gap: 12px; }
+.card-icon { width: 34px; height: 34px; border-radius: 7px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.icon-sangue { background: var(--blood-bg); }
+.icon-imagem { background: var(--imaging-bg); }
+.icon-cardio { background: var(--cardio-bg); }
+.icon-internacao { background: var(--hosp-bg); }
+.card-info { flex: 1; min-width: 0; }
+.card-name { font-weight: 600; font-size: 14.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
+.card-meta { display: flex; gap: 10px; margin-top: 2px; flex-wrap: wrap; }
+.meta-chip { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--muted2); display: flex; align-items: center; gap: 3px; }
+.badge { padding: 2px 8px; border-radius: 20px; font-size: 10px; font-weight: 600; flex-shrink: 0; }
+.badge-sangue { background: var(--blood-bg); color: var(--blood); }
+.badge-imagem { background: var(--imaging-bg); color: var(--imaging); }
+.badge-cardio { background: var(--cardio-bg); color: var(--cardio); }
+.badge-internacao { background: var(--hosp-bg); color: var(--hosp); }
+.card-toggle { padding: 13px 14px; display: flex; align-items: center; color: var(--muted); }
+.card-toggle svg { transition: transform 0.25s; }
+.card.open .card-toggle svg { transform: rotate(180deg); }
+.card-body { display: none; border-top: 1px solid var(--border); padding: 15px 18px; background: var(--surface2); gap: 12px; grid-template-columns: 1fr 1fr; animation: slideDown 0.2s ease; }
+.card.open .card-body { display: grid; }
+.field-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 3px; }
+.field-value { font-size: 13.5px; color: var(--text); }
+.obs-full { grid-column: 1/-1; }
+.obs-textarea { width: 100%; min-height: 65px; padding: 9px 11px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 12.5px; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; line-height: 1.6; }
+.obs-textarea:focus { border-color: var(--accent); }
+.obs-textarea::placeholder { color: var(--muted); }
+.card-actions { grid-column: 1/-1; display: flex; justify-content: flex-end; gap: 7px; }
+.btn-sm { padding: 5px 12px; border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-save-sm { background: var(--accent); color: #fff; border: none; }
+.btn-save-sm:hover { background: #3a87f0; }
+.btn-delete-sm { background: transparent; color: var(--blood); border: 1px solid rgba(224,92,92,0.2); }
+.btn-delete-sm:hover { background: var(--blood-bg); }
+.btn-ai-sm { background: var(--cardio-bg); color: var(--cardio); border: 1px solid rgba(167,139,250,0.2); display: flex; align-items: center; gap: 4px; }
+.btn-ai-sm:hover { background: rgba(167,139,250,0.2); }
+
+/* ALERTS */
+.alert-warn { background: var(--warn-bg); border: 1px solid rgba(251,146,60,0.25); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: var(--warn); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+
+/* EMPTY */
+.empty { text-align: center; padding: 50px 20px; color: var(--muted); }
+.empty-icon { font-size: 36px; margin-bottom: 12px; opacity: 0.35; }
+.empty h3 { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 400; color: var(--muted2); margin-bottom: 5px; }
+
+/* ── UPLOAD PAGE ── */
+.upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+.upload-zone { border: 2px dashed var(--border2); border-radius: var(--radius); padding: 28px 16px; text-align: center; cursor: pointer; transition: all 0.2s; background: var(--surface); position: relative; }
+.upload-zone:hover, .upload-zone.drag { border-color: var(--accent); background: var(--accent-glow); }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.upload-icon { font-size: 28px; margin-bottom: 8px; }
+.upload-title { font-size: 13px; font-weight: 600; margin-bottom: 3px; }
+.upload-sub { font-size: 11px; color: var(--muted); }
+.upload-badge { display: inline-block; margin-top: 8px; padding: 2px 10px; border-radius: 20px; font-size: 10px; font-weight: 600; }
+.badge-blue { background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(79,156,249,0.2); }
+.queue-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 16px; min-height: 80px; }
+.queue-title { font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 10px; }
+.queue-list { display: flex; flex-direction: column; gap: 6px; }
+.queue-item { display: flex; align-items: center; gap: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; }
+.queue-item-icon { font-size: 16px; flex-shrink: 0; }
+.queue-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted2); }
+.queue-item-status { font-size: 10px; font-family: 'JetBrains Mono', monospace; padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+.status-pending { background: var(--surface); color: var(--muted); border: 1px solid var(--border); }
+.status-processing { background: var(--accent-glow); color: var(--accent2); border: 1px solid rgba(79,156,249,0.2); animation: blink 1.5s infinite; }
+.status-done { background: var(--green-bg); color: var(--green); border: 1px solid rgba(74,222,128,0.2); }
+.status-error { background: var(--blood-bg); color: var(--blood); border: 1px solid rgba(224,92,92,0.2); }
+@keyframes blink { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+.queue-item-remove { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 14px; padding: 0 4px; }
+.queue-item-remove:hover { color: var(--blood); }
+.process-btn { width: 100%; padding: 13px; background: linear-gradient(135deg, var(--accent), var(--cardio)); color: #fff; border: none; border-radius: var(--radius); font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; cursor: pointer; transition: opacity 0.2s, transform 0.1s; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.process-btn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.process-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.results-area { margin-top: 20px; }
+.result-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; animation: fadeUp 0.3s ease; box-shadow: var(--shadow-sm); }
+.result-header { padding: 12px 16px; background: linear-gradient(90deg, rgba(79,156,249,0.07), rgba(167,139,250,0.07)); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+.ai-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); animation: pulse 2s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.result-body { padding: 16px; font-size: 13px; line-height: 1.75; color: var(--text); white-space: pre-wrap; }
+.result-save { padding: 10px 16px; border-top: 1px solid var(--border); background: var(--surface2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.result-save input, .result-save select { padding: 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 12px; color: var(--text); outline: none; }
+.result-save select option { background: var(--surface); color: var(--text); }
+.result-save input:focus, .result-save select:focus { border-color: var(--accent); }
+
+/* CHAT */
+.chat-container { display: flex; flex-direction: column; height: calc(100vh - 140px); }
+.chat-context { background: var(--accent-glow); border: 1px solid rgba(79,156,249,0.15); border-radius: var(--r-sm); padding: 9px 13px; font-size: 11px; color: var(--accent2); margin-bottom: 14px; display: flex; align-items: center; gap: 7px; }
+.chat-messages { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; padding-bottom: 16px; }
+.chat-bubble { max-width: 82%; animation: fadeUp 0.25s ease; }
+.chat-bubble.user { align-self: flex-end; }
+.chat-bubble.ai { align-self: flex-start; }
+.bubble-label { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--muted); margin-bottom: 3px; padding: 0 3px; }
+.user .bubble-label { text-align: right; }
+.bubble-inner { padding: 11px 14px; border-radius: 12px; font-size: 13px; line-height: 1.7; white-space: pre-wrap; }
+.user .bubble-inner { background: var(--accent); color: #fff; border-bottom-right-radius: 3px; }
+.ai .bubble-inner { background: var(--surface2); border: 1px solid var(--border); color: var(--text); border-bottom-left-radius: 3px; }
+.chat-input-area { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; display: flex; gap: 8px; align-items: flex-end; }
+.chat-textarea { flex: 1; background: transparent; border: none; font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); resize: none; outline: none; max-height: 100px; min-height: 22px; line-height: 1.5; }
+.chat-textarea::placeholder { color: var(--muted); }
+.chat-send { width: 34px; height: 34px; border-radius: 7px; background: var(--accent); border: none; color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.15s; flex-shrink: 0; }
+.chat-send:hover { background: #3a87f0; }
+.chat-send:disabled { opacity: 0.4; cursor: not-allowed; }
+.typing-dots { display: inline-flex; gap: 3px; align-items: center; padding: 4px 0; }
+.typing-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); animation: tdot 1.2s infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tdot { 0%,80%,100%{opacity:0.2;transform:scale(0.8);} 40%{opacity:1;transform:scale(1);} }
+
+/* MODAL */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(30,35,48,0.35); z-index: 300; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(6px); }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 480px; box-shadow: var(--shadow-lg); animation: modalIn 0.2s ease; }
+@keyframes modalIn { from{opacity:0;transform:scale(0.95) translateY(10px);} to{opacity:1;transform:scale(1) translateY(0);} }
+.modal h2 { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 400; margin-bottom: 20px; }
+.form-row { margin-bottom: 12px; }
+.form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+.form-label { display: block; font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 5px; }
+.form-input, .form-select, .form-textarea { width: 100%; padding: 8px 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 13px; color: var(--text); outline: none; transition: border-color 0.2s; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+.form-input::placeholder, .form-textarea::placeholder { color: var(--muted); }
+.form-select option { background: var(--surface); }
+.form-textarea { min-height: 75px; resize: vertical; line-height: 1.5; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 9px; margin-top: 20px; }
+.btn-cancel { padding: 8px 16px; border-radius: var(--r-sm); border: 1px solid var(--border); background: transparent; font-family: 'Syne', sans-serif; font-size: 13px; color: var(--muted2); cursor: pointer; transition: all 0.15s; }
+.btn-cancel:hover { border-color: var(--border2); color: var(--text); }
+.btn-confirm { padding: 8px 18px; border-radius: var(--r-sm); border: none; background: var(--accent); color: #fff; font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+.btn-confirm:hover { background: #3a87f0; }
+
+/* API KEY BANNER */
+.api-banner { background: var(--warn-bg); border: 1px solid rgba(251,146,60,0.25); border-radius: var(--r-sm); padding: 10px 14px; font-size: 12px; color: var(--warn); margin-bottom: 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.api-key-input { flex: 1; min-width: 200px; padding: 6px 10px; background: var(--surface2); border: 1px solid rgba(251,146,60,0.3); border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--text); outline: none; }
+.api-key-input:focus { border-color: var(--warn); }
+.btn-set-key { padding: 6px 12px; background: var(--warn); color: #000; border: none; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+/* EVENT GROUP (internação view) */
+.event-group { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 14px; box-shadow: var(--shadow-sm); overflow: hidden; }
+.event-header { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: var(--hosp-bg); border-bottom: 1px solid var(--border); cursor: pointer; flex-wrap: wrap; }
+.event-icon { font-size: 20px; flex-shrink: 0; }
+.event-title { font-weight: 700; font-size: 15px; color: var(--text); flex: 1; min-width: 180px; }
+.event-meta { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--muted2); white-space: nowrap; }
+.event-badge { padding: 4px 12px; border-radius: 20px; font-size: 10.5px; font-weight: 700; background: var(--hosp); color: #fff; white-space: nowrap; flex-shrink: 0; }
+.event-body { padding: 4px 8px 8px; }
+.event-body .card { box-shadow: none; border-color: var(--border); margin-bottom: 4px; }
+.event-body .card:last-child { margin-bottom: 0; }
+.event-connector { width: 2px; height: 8px; background: var(--border2); margin: 0 auto; }
+
+@media(max-width:680px) {
+  .sidebar{display:none;} .page{padding:16px 16px 50px;} .upload-grid{grid-template-columns:1fr;} .card-body{grid-template-columns:1fr;} .form-row-2{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN GATE -->
+<div id="login-gate" style="display:flex; align-items:center; justify-content:center; min-height:100vh; background:var(--bg); padding:20px;">
+  <div style="background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:40px 36px; width:100%; max-width:380px; box-shadow:var(--shadow-lg); text-align:center;">
+    <div style="font-size:48px; margin-bottom:12px;">🔒</div>
+    <h1 style="font-family:'Playfair Display',serif; font-size:24px; font-weight:600; color:var(--text); margin-bottom:6px;">Saude AV</h1>
+    <p style="font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:28px;">Area restrita — Historico de Exames</p>
+    <form id="login-form" onsubmit="return tryLogin(event)">
+      <input id="login-user" type="text" placeholder="Usuario" autocomplete="username"
+        style="width:100%; padding:10px 14px; margin-bottom:10px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none;">
+      <input id="login-pass" type="password" placeholder="Senha" autocomplete="current-password"
+        style="width:100%; padding:10px 14px; margin-bottom:6px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; color:var(--text); outline:none;">
+      <p id="login-error" style="font-size:12px; color:var(--blood); min-height:20px; margin:6px 0;"></p>
+      <button type="submit"
+        style="width:100%; padding:12px; background:var(--accent); color:#fff; border:none; border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:14px; font-weight:700; cursor:pointer; transition:background 0.15s;">
+        Entrar
+      </button>
+    </form>
+    <a href="../" style="display:inline-block; margin-top:16px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
+  </div>
+</div>
+
+<div class="app" id="app-main" style="display:none;">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="logo">
+    <div class="logo-title">Saúde<br><em style="font-style:italic;color:var(--accent)">AV</em></div>
+    <div class="logo-sub">André Vasconcelos · 1988</div>
+  </div>
+  <div class="nav">
+    <div class="nav-section">Registros</div>
+    <div class="nav-item active" onclick="goTo('historico',this)"><span class="nav-icon">📋</span> Histórico</div>
+    <div class="nav-item" onclick="goTo('upload',this)"><span class="nav-icon">📤</span> Importar Exames</div>
+    <div class="nav-section">AI</div>
+    <div class="nav-item" onclick="goTo('chat',this)"><span class="nav-icon">💬</span> Chat Médico AI</div>
+  </div>
+  <div class="sidebar-stats">
+    <div class="s-stat"><div class="s-stat-num" id="sb-total">0</div><div class="s-stat-label">Exames</div></div>
+    <div class="s-stat"><div class="s-stat-num" id="sb-years">0</div><div class="s-stat-label">Anos de histórico</div></div>
+    <div class="s-stat"><div class="s-stat-num" id="sb-last">—</div><div class="s-stat-label">Último exame</div></div>
+  </div>
+</nav>
+
+<!-- CONTENT -->
+<div class="content">
+
+<!-- HISTÓRICO -->
+<div class="page active" id="page-historico">
+  <div class="page-header">
+    <div class="page-title">Histórico de <em>Exames</em></div>
+    <button class="btn-primary" onclick="openModal()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg> Adicionar
+    </button>
+  </div>
+  <div class="controls">
+    <div class="search-wrap">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+      <input class="search-input" type="text" placeholder="Buscar exame, médico, local..." id="search-input" oninput="renderList()">
+    </div>
+    <div class="filter-pills">
+      <button class="pill active" data-f="all" onclick="setFilter('all',this)">Todos</button>
+      <button class="pill" data-f="sangue" onclick="setFilter('sangue',this)">🩸 Sangue</button>
+      <button class="pill" data-f="imagem" onclick="setFilter('imagem',this)">🩻 Imagem</button>
+      <button class="pill" data-f="cardio" onclick="setFilter('cardio',this)">❤️ Cardio</button>
+      <button class="pill" data-f="internacao" onclick="setFilter('internacao',this)">🏥 Internação</button>
+    </div>
+    <select class="sort-select" id="sort-select" onchange="renderList()">
+      <option value="desc">Mais recente</option>
+      <option value="asc">Mais antigo</option>
+    </select>
+  </div>
+  <div id="list-container"></div>
+</div>
+
+<!-- IMPORTAR -->
+<div class="page" id="page-upload">
+  <div class="page-header">
+    <div class="page-title">Importar <em>Exames</em></div>
+  </div>
+
+  <div class="api-banner" id="api-banner">
+    <span>🔑</span>
+    <span style="flex:1">Para análise com AI, insira sua chave da API Anthropic:</span>
+    <input type="password" class="api-key-input" id="api-key-input" placeholder="sk-ant-...">
+    <button class="btn-set-key" onclick="saveApiKey()">Salvar</button>
+  </div>
+
+  <div class="upload-grid">
+    <div class="upload-zone" id="zone-pdf">
+      <input type="file" id="input-pdf" accept=".pdf" multiple onchange="addFiles(this.files,'pdf')">
+      <div class="upload-icon">📄</div>
+      <div class="upload-title">PDFs de Exames</div>
+      <div class="upload-sub">Laudos, relatórios, resultados</div>
+      <span class="upload-badge badge-blue">PDF</span>
+    </div>
+    <div class="upload-zone" id="zone-img">
+      <input type="file" id="input-img" accept="image/*" multiple onchange="addFiles(this.files,'img')">
+      <div class="upload-icon">📷</div>
+      <div class="upload-title">Fotos de Exames</div>
+      <div class="upload-sub">JPG, PNG — múltiplas fotos do mesmo exame</div>
+      <span class="upload-badge badge-blue">IMAGEM</span>
+    </div>
+  </div>
+
+  <div class="queue-area">
+    <div class="queue-title">Fila de processamento (<span id="queue-count">0</span> arquivo(s))</div>
+    <div class="queue-list" id="queue-list">
+      <div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Nenhum arquivo na fila ainda.</div>
+    </div>
+  </div>
+
+  <button class="process-btn" id="process-btn" onclick="processQueue()" disabled>
+    ✨ Processar e Identificar com AI
+  </button>
+
+  <div class="results-area" id="results-area"></div>
+</div>
+
+<!-- CHAT -->
+<div class="page" id="page-chat">
+  <div class="page-header">
+    <div class="page-title">Chat <em>Médico AI</em></div>
+  </div>
+  <div class="chat-container">
+    <div class="chat-context">
+      <span>🧠</span> AI tem acesso ao seu histórico completo para contextualizar respostas.
+    </div>
+    <div class="chat-messages" id="chat-messages">
+      <div class="chat-bubble ai">
+        <div class="bubble-label">AI Médica</div>
+        <div class="bubble-inner">Olá, André! 👋
+
+Tenho acesso ao seu histórico médico completo — desde os exames de 1997 até os de ontem (28/03/2026). São mais de 50 registros cobrindo 29 anos.
+
+Posso te ajudar a entender resultados, identificar tendências, comparar exames ao longo do tempo ou responder qualquer dúvida sobre sua saúde.
+
+O que você gostaria de explorar?</div>
+      </div>
+    </div>
+    <div class="chat-input-area">
+      <textarea class="chat-textarea" id="chat-input" placeholder="Pergunte sobre seus exames..." rows="1"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendChat()}"
+        oninput="this.style.height='auto';this.style.height=this.scrollHeight+'px'"></textarea>
+      <button class="chat-send" id="chat-send-btn" onclick="sendChat()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m22 2-7 20-4-9-9-4 20-7z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+</div><!-- /content -->
+</div><!-- /app -->
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>Novo Exame</h2>
+    <div class="form-row">
+      <label class="form-label">Nome do Exame *</label>
+      <input class="form-input" id="f-nome" type="text" placeholder="Ex: Hemograma Completo">
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Tipo *</label>
+        <select class="form-select" id="f-tipo">
+          <option value="">Selecionar...</option>
+          <option value="sangue">🩸 Sangue / Lab</option>
+          <option value="imagem">🩻 Imagem</option>
+          <option value="cardio">❤️ Cardiologia</option>
+          <option value="internacao">🏥 Internação</option>
+        </select>
+      </div>
+      <div>
+        <label class="form-label">Data *</label>
+        <input class="form-input" id="f-data" type="date">
+      </div>
+    </div>
+    <div class="form-row-2">
+      <div>
+        <label class="form-label">Médico / Clínica</label>
+        <input class="form-input" id="f-medico" type="text" placeholder="Dr. Nome">
+      </div>
+      <div>
+        <label class="form-label">Local</label>
+        <input class="form-input" id="f-local" type="text" placeholder="H. Pardini, Ecoar...">
+      </div>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Observações / Resultados</label>
+      <textarea class="form-textarea" id="f-obs" placeholder="Valores, impressão diagnóstica, achados..."></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-confirm" onclick="addExame()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+// LOGIN GATE
+const AUTH_HASH = '9b6149b0db29aa16e099af8b6bf27ebc0e51ec21718e5ed57d0cae9ad4a46dd0';
+function sha256(str) {
+  const buf = new TextEncoder().encode(str);
+  return crypto.subtle.digest('SHA-256', buf).then(h => {
+    return Array.from(new Uint8Array(h)).map(b => b.toString(16).padStart(2,'0')).join('');
+  });
+}
+function tryLogin(e) {
+  e.preventDefault();
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  if (!user || !pass) { document.getElementById('login-error').textContent = 'Preencha todos os campos.'; return false; }
+  sha256(user.toLowerCase() + ':' + pass).then(hash => {
+    if (hash === AUTH_HASH) {
+      sessionStorage.setItem('saude_auth', '1');
+      document.getElementById('login-gate').style.display = 'none';
+      document.getElementById('app-main').style.display = '';
+    } else {
+      document.getElementById('login-error').textContent = 'Usuario ou senha incorretos.';
+      document.getElementById('login-pass').value = '';
+    }
+  });
+  return false;
+}
+// Auto-login if already authenticated this session
+if (sessionStorage.getItem('saude_auth') === '1') {
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('login-gate').style.display = 'none';
+    document.getElementById('app-main').style.display = '';
+  });
+}
+// ═══════════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════════
+const ICONS = { sangue:'🩸', imagem:'🩻', cardio:'❤️', internacao:'🏥' };
+const LABELS = { sangue:'Sangue / Lab', imagem:'Imagem', cardio:'Cardiologia', internacao:'Internação' };
+
+const SEED = [
+  // 1997
+  { id:'19970715a', nome:'Hemograma Completo + Citometria de Fluxo', tipo:'sangue', data:'1997-07-15', medico:'Dr. Massimo Pirfo', local:'H. Pardini', obs:'WBC: 6.2 | LY: 39.8% | MO: 4.7% | GR: 47.6% | EO: 2.9% | BA: 0.8%\nRBC: 4.64 | HGB: 14.1 | HCT: 43.1 | MCV: 93.1 | MCH: 30.4 | MCHC: 32.6 | PLT: 249\nResultado dentro dos parâmetros normais.' },
+  { id:'19970715b', nome:'Painel Tireoide — T3, T4 Total, ITL, TSH Ultra Sensível', tipo:'sangue', data:'1997-07-15', medico:'Dr. Massimo Pirfo', local:'H. Pardini', obs:'T3 Retenção: 32% (ref: 27-39%)\nT4 Total: 8.4 MCG/DL\nITL: 2.69 (ref: 1.40-3.80)\nTSH Ultra Sensível: 1.27 MICRO UI/ML (ref: 0.3-5.0)\nAnti-TPO Microssomal: 8 U/ML ✓ (ref: <15)\nTodos normais.' },
+  { id:'19970715c', nome:'Urina Rotina', tipo:'sangue', data:'1997-07-15', medico:'Dr. Massimo Pirfo', local:'H. Pardini', obs:'Cor: Amarela | Aspecto: Límpido | Densidade: 1025 | pH: 5,5\nGlicose: Negativo | Bilirrubina: Negativo | Hemoglobina: Negativo | Albumina: Negativo | Nitrito: Negativo\nSedimento: Piócitos 1/C, Muco moderado, Flora bacteriana moderada.\nExame sem alterações significativas.' },
+  // 2000
+  { id:'20000422a', nome:'Painel Tireoide — TSH, T4 Livre, Anti-TPO', tipo:'sangue', data:'2000-04-22', medico:'Dr. Massimo Pirfo', local:'Lab. Humberto Abrão', obs:'TSH: 1.68 microUI/mL (ref: 0.49-4.67)\nT4 Livre: 1.22 ng/dL (ref: 0.71-1.95)\nAnti-TPO: 0.8 AU/mL — NEGATIVO (<15)\nFunção tireoidiana normal. Autoimunidade negativa.' },
+  { id:'20001101a', nome:'Painel Tireoide — Anti-TPO Microssomal, T4 Livre, TSH', tipo:'sangue', data:'2000-11-01', medico:'Dr. Massimo / Dr. Alessandro Eizo Pirfo', local:'H. Pardini', obs:'Anti-TPO Microssomal: 11 IU/mL (ref: <16)\nT4 Livre: 0.99 MANG/DL (ref: 0.70-1.80)\nTSH Ultra Sensível: 1.85 MICRO UI/ML\nTodos normais.' },
+  // 2002
+  { id:'20020731a', nome:'Hemograma + Painel Tireoide + Anti-TPO', tipo:'sangue', data:'2002-07-31', medico:'Dr. Massimo E. Alessandro Ezio Pirfo', local:'H. Pardini', obs:'HEMOGRAMA: Hemácias 5.090.000 ✓ | Hgb 14,8 ✓ | Ht 43,6% ✓ | VCM 85,7 ✓ | PLT 215.000 ✓\nLeucócitos 5.310 ✓ | Neutrófilos 41,5% | Linfócitos 41,3% | Monócitos 10,7% | Eosinófilos 5,9%\nTIREOIDE: TSH 1,20 ✓ (ref: 0,3-5,0) | T4 Livre 1,31 ng/dL ✓ (ref: 0,75-1,80)\n⚠️ Anti-TPO: 21 IU/ML (ref: <15) — levemente positivo. Revisto e confirmado.\nNota: ~10% da população normal pode ter Anti-TPO positivo em níveis limiares.' },
+  // 2003
+  { id:'20030319a', nome:'Holter 20h42 — Inconclusivo (canal com artefato)', tipo:'cardio', data:'2003-03-19', medico:'Dra. Mucio Monteiro / Dr. Vladimir Costa Val Barros', local:'Ecoar Medicina Diagnóstica', obs:'94.542 QRS, 20h42, FC média 77 bpm (44-156)\n2.806 ectópicos ventriculares (116 EV/h) — muito frequente!\nExame inconclusivo por artefato nos canais 1 e 3. Repetido em 26/03/2003.' },
+  { id:'20030321a', nome:'Ecocardiograma + Doppler', tipo:'cardio', data:'2003-03-21', medico:'Dr. Fernando Santana Machado', local:'Ecoar Medicina Diagnóstica', obs:'AO: 26mm | AE: 26mm | VE(d): 45mm | VE(s): 43mm | SIV: 8mm | PPVE: 8mm | FE: 0.70\nImpressão: Ecocardiograma e Doppler normais.\nSitus solitus, septo íntegro, válvulas normais.' },
+  { id:'20030326a', nome:'Holter 23h09', tipo:'cardio', data:'2003-03-26', medico:'Dra. Mucio Monteiro / Dr. Vladimir Costa Val Barros', local:'Ecoar Medicina Diagnóstica', obs:'88.941 QRS, 23h09, FC média 72 bpm (45-154)\n1 ectópico ventricular isolado. 11 supraventriculares isolados.\nConclusão: Atividade ectópica ventricular rara (1 ESSV). Sem sintomas.' },
+  { id:'20030813a', nome:'Ultrassonografia Abdominal Total', tipo:'imagem', data:'2003-08-13', medico:'Dr. Dalfran dos Reis Salum / Dra. Mucio Monteiro Magalhães', local:'Clínica Conrad', obs:'Impressão: Fígado, vesícula, vias biliares, pâncreas, baço, rins, aorta e cavidade abdominal sem alterações à ecografia.' },
+  { id:'20030402a', nome:'Hemograma + TSH Ultra Sensível', tipo:'sangue', data:'2003-04-02', medico:'Dr. Paulo Henrique C. Vasconcelos', local:'H. Pardini', obs:'HEMOGRAMA: Hemácias 5.090.000 ✓ | Hgb 14,6 ✓ | Ht 44,5% ✓ | VCM 87,4 ✓ | PLT 192.000 ✓\nLeucócitos 5.600 ✓ | Neutrófilos 41,2% | Linfócitos 44,1% | Monócitos 10,4% | Eosinófilos 3,5%\nTSH Ultra Sensível: 0,76 MICRO UI/ML ✓ (ref: 0,3-5,0)\nTodos normais.' },
+  // 2005
+  { id:'20050819a', nome:'Hemograma + Lipidograma + Glicemia + Ferritina', tipo:'sangue', data:'2005-08-19', medico:'Dr. Marcos Carvalho Vasconcelos', local:'H. Pardini', obs:'HEMOGRAMA: Hemácias 5.630.000 ⚠️ (ref: até 5.300.000) | Hgb 16,6 ⚠️ (ref: até 16,0) | Ht 48,9% ✓\n⚠️ Leucócitos 12.300 (ref: até 10.500) — Neutrófilos 71,9% (8.850) ⚠️ | Monócitos 10,6% (1.300) ⚠️\nPLT 216.000 ✓\nLIPIDOGRAMA: Colesterol Total 156 ✅ | HDL 47 ✓ | LDL 87 ✅ | VLDL 22 ✓ | Triglicérides 109 ✓\nGlicemia jejum: 85 mg/dL ✓ (ref: 60-99)\nFerritina: 106 ng/mL ✓ (ref: 29-300 homem)\nNota: leucocitose com neutrofilia — possível processo infeccioso/inflamatório agudo.' },
+  // 2006
+  { id:'20060626a', nome:'Ecocardiograma + Doppler', tipo:'cardio', data:'2006-06-26', medico:'Dra. Mucio Monteiro + equipe', local:'Ecoar Medicina Diagnóstica', obs:'AO: 30mm | AE: 31mm | VE(d): 30mm | VE(s): 19mm | SIV: 8mm | PPVE: 8mm | FE: 0.68\nImpressão: Ecocardiograma e Doppler normais.' },
+  { id:'20060628a', nome:'Holter 23h51', tipo:'cardio', data:'2006-06-28', medico:'Dra. Denise Franca Magalhães Duarte / Dr. Vladimir Costa Val Barros', local:'Ecoar Medicina Diagnóstica', obs:'101.793 QRS, 23h51, FC média 73 bpm (48-180)\n243 ectópicos ventriculares isolados (10 EV/h). Zero supraventriculares.\nSem pausas, sem ST. Sem sintomas.' },
+  { id:'20060707a', nome:'ECG de Alta Resolução', tipo:'cardio', data:'2006-07-07', medico:'Dr. Vladimir Costa Val Barros / Dra. Mucio Monteiro', local:'Ecoar Medicina Diagnóstica', obs:'Indicação: Avaliação de arritmia.\nDuração QRS filtrado: 102ms (ref ≤114ms) | RMS últimos 42ms: 60µV (ref ≥25µV)\nConclusão: Ausência de potenciais tardios. Exame normal.' },
+  { id:'20060707b', nome:'Teste Ergométrico', tipo:'cardio', data:'2006-07-07', medico:'Dr. Vladimir Costa Val Barros / Dra. Mucio Monteiro', local:'Ecoar Medicina Diagnóstica', obs:'17 anos, 62kg, 1.72m, IMC 21.0. Protocolo Ellestad. Indicação: arritmia / herança cardíaca.\nInterrompido aos 10:12min por cansaço e dor nos pés.\nConclusão: Resposta cardiovascular fisiológica, sem isquemia.' },
+  // 2009
+  { id:'20090807a', nome:'Painel Laboratorial — Hemograma, Bioquímica, Urina', tipo:'sangue', data:'2009-08-07', medico:'Dr. Fernando Carvalho de Vasconcelos', local:'H. Pardini', obs:'HEMOGRAMA: Hemácias 5.610.000 ✓ | Hgb 16,8 ✓ | Ht 48,6% ✓ | VCM 86,5 | PLT 236.000 ✓\nLeucócitos 8.200 ✓ | Neutrófilos 64,2% | Linfócitos 23,1% | VHS: 2 mm ✅\nBIOQUÍMICA: Glicemia 83 ✓ | Colesterol Total 173 ✅ | HDL 49 ✓ | LDL 104 ✓ | VLDL 20 ✓\nCreatinina 1,12 ✓ | Ureia 27 ✓ | TGO 23 ✓ | TGP 24 ✓\nURINA: Normal — sem alterações. Urocultura negativa.\nFEZES: Sangue oculto NEGATIVO ✓\nTodos os resultados dentro da normalidade.' },
+  { id:'20091221a', nome:'Internação — Síncope por Calor (CID T671)', tipo:'internacao', data:'2009-12-21', medico:'Dra. Denise Franca Magalhães Duarte', local:'Hospital Mater Dei — Cardiologia Clínica 17º andar', evento:'internacao-2009-mater-dei', obs:'Admissão: 21/12/2009 22:10 | Alta: 22/12/2009 20:13\nQuadro: taquicardia + lipotimia + contraturas musculares + sudorese + hipoxia + afasia parcial. FC 140.\nECG admissão: ritmo sinusal taquicárdico. ECG 2h após: extrassístoles atriais multifocais.\nDistúrbio hidroeletrolítico tratado. Eco normal. Hemocultura negativa.\nAlta para controle ambulatorial. TSH e parohormônio solicitados.' },
+  { id:'20091221b', nome:'Hemograma Completo — PS Mater Dei', tipo:'sangue', data:'2009-12-21', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'Hemácias: 5.30 | Hgb: 15.0 | Ht: 45.5% | MCV: 85.8 | Plaquetas: 200.000 | Leucócitos: 8.000\nNeutrófilos segmentados: 81% (elevado — reação a estresse agudo)\nHemácias normocíticas e normocrômicas. Leucócitos sem alterações morfológicas.' },
+  { id:'20091222a', nome:'Bioquímica de Urgência — 10 marcadores', tipo:'sangue', data:'2009-12-22', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'Cálcio: 8.0 mg/dL ⚠️ (ref 8.4-10.2) | Fósforo: 0.7 ⚠️ (ref 2.5-5.0) | Glicose: 249 ⚠️ | Creatinina: 1.00 ✓\nMagnésio: 1.6 (limite inf) | Potássio: 3.3 ⚠️ (ref 3.7-5.0) | PCR: 21 mg/L ⚠️ (ref <10)\nSódio: 138 ✓ | TGO: 49 ✓ | TGP: 47 ✓ | Ureia: 16 ⚠️ (lev. abaixo)\nContexto: distúrbio hidroeletrolítico durante internação.' },
+  { id:'20091222b', nome:'Hemocultura', tipo:'sangue', data:'2009-12-22', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'Resultado: NEGATIVO\nNão houve crescimento bacteriano após 5 dias de incubação.\nInfecção bacteriana sistêmica descartada.' },
+  { id:'20091222c', nome:'Gasometria Venosa', tipo:'sangue', data:'2009-12-22', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'pH: 7.450 ⚠️ (ref 7.320-7.430 — lev. alcalótico) | pCO2: 37.6 ✓ | pO2: 44 ⚠️\nBicarbonato: 25.7 ✓ | Excesso de base: 2.1 | Saturação O2: 84% ⚠️\nContexto de estresse agudo.' },
+  { id:'20091222d', nome:'Cálcio Iônico + Fósforo + Glicose (2ª coleta)', tipo:'sangue', data:'2009-12-22', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'Cálcio Iônico: 4.09 mg/dL ⚠️ (ref 4.60-5.20)\nFósforo: 3.3 mg/dL ✓ | Glicose: 115 mg/dL ⚠️ (melhorando vs. 249 coleta anterior)' },
+  { id:'20091222e', nome:'PTH Intacto + TSH', tipo:'sangue', data:'2009-12-22', medico:'Dra. Denise Franca Magalhães Duarte', local:'Mater Dei — Lab. Patologia Clínica', evento:'internacao-2009-mater-dei', obs:'PTH Intacto: 40.6 pg/mL ✓ (ref 12-72)\nTSH: 0.374 µUI/mL ⚠️ (ref 0.50-5.00 — lev. abaixo do limite inf.)' },
+  // 2010
+  { id:'20100422a', nome:'Parasitológico de Fezes + Sangue Oculto', tipo:'sangue', data:'2010-04-22', medico:'Dr. Fernando Carvalho de Vasconcelos', local:'H. Pardini', obs:'PARASITOLÓGICO (HPJ): Não foram encontrados ovos ou larvas de helmintos, cistos e trofozoítos de protozoários ✅\nSANGUE OCULTO (Anticorpos Monoclonais): NEGATIVO ✅\nAmbos os exames normais.' },
+  // 2011
+  { id:'20110428a', nome:'Painel IgE Alergias — Ácaros, Animais, Fungos', tipo:'sangue', data:'2011-04-28', medico:'Dr. Ataualpa Pereira Reis', local:'H. Pardini', obs:'IgE Total: 26 KU/L ✓ (ref: até 140)\n⚠️ IgE Múltiplo HX2 (Poeira/Ácaros): 6,86 KU/L — CLASSE 3 (ALTO)\n⚠️ IgE D. Pteronyssinus (D1): 7,67 KU/L — CLASSE 3 (ALTO)\nIgE Múltiplo EX1 (Animais): <0,35 KU/L — CLASSE 0 (NEGATIVO) ✓\nIgE Múltiplo MX1 (Fungos): <0,35 KU/L — CLASSE 0 (NEGATIVO) ✓\nConclusão: Alergia significativa a ácaros/poeira. Sem alergia a animais ou fungos.' },
+  // 2012
+  { id:'20120823a', nome:'Painel IgE Alergias — Cão, Ácaros, Poeira (Controle)', tipo:'sangue', data:'2012-08-23', medico:'Dr. Ataualpa Pereira Reis', local:'H. Pardini', obs:'IgE Total: 16 KU/L ✓ (ref: até 140) — diminuiu vs. 2011 (26)\n⚠️ IgE Múltiplo HX2 (Poeira/Ácaros): 5,29 KU/L — ALTO (melhorou vs. 6,86 em 2011)\n⚠️ IgE D. Pteronyssinus (D1): 4,99 KU/L — ALTO (melhorou vs. 7,67 em 2011)\nIgE Caspa de Cão (E5): <0,1 KU/L — NEGATIVO ✓\nConclusão: Alergia a ácaros persiste mas com tendência de melhora. Sem alergia a cão.' },
+  // 2014
+  { id:'20140324a', nome:'Ecocardiograma + Doppler', tipo:'cardio', data:'2014-03-24', medico:'Dra. Fernanda Curry Carneiro Pinto / Dr. Jose Olinto Pimenta Figueiredo', local:'Ecoar Medicina Diagnóstica', obs:'AO: 30mm | AE: 36mm | VE(s): 30mm | VE(d): 47mm | SIV: 8mm | PPVE: 9mm | FE: 0.66\nImpressão: VE não dilatado, não hipertrofiado, função sisto-diastólica normal.\n⚠️ Regurgitação mitral e tricúspide em grau discreto (novidade vs. 2006).' },
+  { id:'20140324b', nome:'Holter 24h', tipo:'cardio', data:'2014-03-24', medico:'Dra. Solange Fernandes A. Diniz / Dr. Jose Olinto Pimenta Figueiredo', local:'Ecoar Medicina Diagnóstica', obs:'89.577 QRS, 24h exatas. FC média 65 bpm (42-124).\n1 ectópico ventricular isolado (<1%). Zero supraventriculares. Zero pausas. Zero ST.\nConclusão: 1 EV/24h — praticamente normal. Grande melhora vs. 2003/2006!' },
+  { id:'20140411a', nome:'Teste de Inclinação (Tilt Test) — Negativo', tipo:'cardio', data:'2014-04-11', medico:'Dr. Henrique Barroso Moreira (Cardiologia/Arritmias) + Dra. Anna Terra França', local:'Hospital Mater Dei', obs:'Indicação: pré-síncope. Teste provocativo com nitrato sublingual.\nResposta pressórica: Fisiológica | Resposta cronotrópica: Fisiológica.\nConclusão: TESTE DE INCLINAÇÃO NEGATIVO.' },
+  // 2016
+  { id:'20160505a', nome:'Radiografia do Tórax (PA e Perfil)', tipo:'imagem', data:'2016-05-05', medico:'Dra. Laura Filgueiras Mourão Ramos / Dr. Fernando Carvalho de Vasconcelos', local:'Hospital Mater Dei', obs:'Resultado: Normal.\nExpansibilidade pulmonar preservada. Sem consolidações, sem derrame pleural.\nÁrea cardíaca usual. Hilos simétricos. Ossos sem anormalidades.' },
+  { id:'20160505b', nome:'Radiografia dos Seios da Face', tipo:'imagem', data:'2016-05-05', medico:'Dra. Emilia Guerra P. C. Motta / Dr. Fernando Carvalho de Vasconcelos', local:'Hospital Mater Dei', obs:'Hipoplasia dos seios frontais.\nAusência de alterações mucoperiostais significativas.\nSepto nasal alinhado. Ingurgitamento da concha nasal inferior direita.' },
+  { id:'20160629a', nome:'Holter 23h23', tipo:'cardio', data:'2016-06-29', medico:'Dra. Solange Fernandes A. Diniz / Dr. Paulo Henrique C. Vasconcelos', local:'Ecoar Medicina Diagnóstica', obs:'97.251 QRS, 23h23. FC média 71 bpm (44-143).\n1 ectópico ventricular isolado (<1%). 2 supraventriculares isolados.\nPaciente em uso de Lexapro. Ritmo atrial durante FC mais baixas.\nSem pausas, sem ST, sem sintomas.' },
+  // 2017
+  { id:'20171201a', nome:'Radiografia do Tórax (PA e Perfil)', tipo:'imagem', data:'2017-12-01', medico:'Dra. Laura Filgueiras Mourão Ramos / Dr. Fernando Carvalho de Vasconcelos', local:'Hospital Mater Dei', obs:'Resultado: Normal.\nExpansibilidade pulmonar preservada. Sem consolidações, sem derrame pleural.\nÁrea cardíaca usual. Hilos simétricos. Ossos sem anormalidades.' },
+  // 2018
+  { id:'20180921a', nome:'Ultrassonografia Cervical c/ Doppler — Tireoide', tipo:'imagem', data:'2018-09-21', medico:'Dr. Bernardo Lopes Cançado Fonseca / Dr. Paulo Henrique C. Vasconcelos', local:'Spectra Diagnóstico por Imagem', obs:'Tireoide tópica, ecogenicidade preservada.\nPequeno cisto coloide à direita (0.4cm).\nNódulo misto de muito baixo risco (ATA 2015) lobo esquerdo — 1.3 x 0.8 x 1.0cm.\nLinfonodos cervicais reativos. Possível lipoma pré-laríngeo (0.8 x 0.4 x 1.3cm).\nImpressão: Manter controle evolutivo.' },
+  // 2019
+  { id:'20190125a', nome:'Ultrassonografia da Tireoide', tipo:'imagem', data:'2019-01-25', medico:'Dr. Geraldo Afonso Moreira', local:'Hospital Felício Rocho', obs:'Nódulo misto grau II lobo esquerdo — 1.0 x 0.6 x 1.1cm, fluxo periférico ao Doppler.\nVolume total tireoide: 10.9 cm³ (ref: 5-15) ✓\nLinfonodos cervicais reativos.\nImpressão: Nódulo misto no lobo esquerdo — controle evolutivo recomendado.' },
+  { id:'20191227a', nome:'Teste Ergométrico — Aptidão Excelente', tipo:'cardio', data:'2019-12-27', medico:'Dr. André Fernandes Diniz / Dr. Jose Olinto Pimenta Figueiredo', local:'Hospital Mater Dei', obs:'31 anos, 81kg, 171cm. Protocolo Rampa. Indicação: avaliação funcional, episódio de tontura após esforço.\nDuração: 8:37min. FC máx: 188 bpm (99.5% da predita!)\nVO2 máx: 52.38 ml/kg/min | MET máximo: 14.97\nAptidão cardiorrespiratória: EXCELENTE (AHA)\nSem critérios de isquemia. Sem arritmias.' },
+  { id:'20191129a', nome:'Painel Laboratorial — Hemograma, Lipidograma, Hepático, Renal, Tireoide, Urina', tipo:'sangue', data:'2019-11-29', medico:'Dr. Jose Olinto Pimenta Figueiredo', local:'Lab. Humberto Abrão', obs:'HEMOGRAMA: Hemácias 5.540.000 ✓ | Hgb 16,0 ✓ | Ht 47,8% ✓ | PLT 223.000 ✓ | Leuco 6.730 ✓\nDiferencial: Neutrófilos 54% ✓ | Linfócitos 31,8% ✓ | Monócitos 11,4% ✓ | Eosinófilos 2,2% ✓\nGlicose 78 ✅ | Ureia 25 ✓ | Creatinina 0,99 ✓ | RFG >60 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 207 (ref <200) | HDL 42 (limite baixo) | ⚠️ LDL 143 (limítrofe) | Non-HDL 165 ⚠️ | Triglicérides 112 ✓ | VLDL 22 ✓\nFÍGADO: TGO 39 (borderline) | ⚠️ TGP 71,5 (ref <45) | Fosfatase Alcalina 61 ✓ | ⚠️ GGT 63,1 (ref <55)\nBilirrubinas normais (BT 0,99 | BD 0,27 | BI 0,72)\nELETRÓLITOS: Sódio 141 ✓ | Potássio 4,0 ✓ | Cálcio 10,0 ✓ | Ca iônico 1,19 ✓ | Fósforo 3,7 ✓\nVit. D 24,5 ✓ (suficiente) | TSH 1,21 ✓ | T4L 1,41 ✓\nURINA: Normal, sem alterações.\nNota: TGP e GGT elevados — investigar esteatose/consumo de álcool.' },
+  // 2020
+  { id:'20200110a', nome:'Ecodopplercardiograma Transtorácico', tipo:'cardio', data:'2020-01-10', medico:'Dr. Thiago Santos Taveira / Dr. Fernando Carvalho de Vasconcelos', local:'Hospital Mater Dei', obs:'VE(d): 47mm | VE(s): 29mm | SIV: 6mm | PP: 6mm | FE: 70% | Aorta: 28mm | AE: 35mm\nRegurgitação mitral discreta fisiológica. Sem hipertensão pulmonar. Pericárdio sem alterações.\nConclusão: Ecodopplercardiograma em repouso dentro dos limites da normalidade.' },
+  { id:'20200114a', nome:'Ultrassonografia Abdominal Total', tipo:'imagem', data:'2020-01-14', medico:'Dra. Leticia Martins Azeredo / Dr. Fernando Carvalho de Vasconcelos', local:'Hospital Mater Dei', obs:'Fígado, vesícula, vias biliares, pâncreas, baço, rins, aorta, bexiga — todos normais.\n⚠️ Impressão: Aumento da ecogenicidade do parênquima hepático compatível com ESTEATOSE LEVE.\nDiagnóstico diferencial inclui esteatohepatite e outras doenças de depósito.' },
+  { id:'20201111a', nome:'Painel Laboratorial Completo — 40+ marcadores', tipo:'sangue', data:'2020-11-11', medico:'Dr. Fernando Carvalho de Vasconcelos', local:'Lab. Humberto Abrão', obs:'HEMOGRAMA: Hemácias 5.370.000 ✓ | Hgb 15,4 ✓ | Ht 45,2% ✓ | PLT 212.000 ✓ | Leuco 8.850 ✓\n⚠️ Monócitos 12% / 1.062 (ref até 1.000)\nGLICOSE: 85 ✓ | HbA1c 5,3% ✓ | eAG 105 ✓ | Insulina 6,2 ✓ | HOMA-IR 1,30 ✓\nRENAL: Creatinina 0,94 ✓ | RFG >60 ✓ | Ureia 34 ✓ | Ácido Úrico 5,9 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 226 (ref <200) | HDL 46 (limite baixo) | ⚠️ LDL 162 (ALTO!) | Non-HDL 180 ⚠️ | Triglicérides 92 ✓\nFÍGADO: TGO 38 ✓ | ⚠️ TGP 60 (ref <58) | Fosfatase Alcalina 72 ✓ | GGT 65 ✓ (ref <73)\nBilirrubinas normais (BT 0,56 | BD 0,20 | BI 0,36) | Homocisteína 15,5 ✓\nELETRÓLITOS: Sódio 141 ✓ | Potássio 4,0 ✓ | Cloreto 104 ✓ | Magnésio 1,9 ✓ | Ca iônico 1,18 ✓\nTIREOIDE: TSH 2,15 ✓ | T4L 1,22 ✓ | T3L 3,8 ✓\nHORMÔNIOS: Testosterona 484 ✓ | Test. Livre 131 pg/mL ✓ | Test. Biodisponível 306 ✓ | SHBG 20 ✓\nFSH 1,8 ✓ | LH 1,9 ✓ | Estradiol 33,8 ✓ | ⚠️ Prolactina 20,5 (ref: até 17,7) | DHEA-S 516 ✓\nCortisol 20,4 ✓ | PTH 40,6 ✓\nVITAMINAS: B12 489 ✓ | Ác. Fólico 22,5 ✓ | Vit. D 25,0 ✓ (suficiente) | Ferritina 270,3 ✓\nHOMA-Beta 101,8\nURINA: Cristais de Oxalato de Cálcio (+). Flora moderada.\nDestaques: LDL em nível alto (162). Prolactina levemente elevada. Monócitos no limite.' },
+  // 2022
+  { id:'20221124a', nome:'Painel Laboratorial Completo — 60 marcadores', tipo:'sangue', data:'2022-11-24', medico:'Dr. Rafael Timbo Mourao', local:'Labclass / H. Pardini', obs:'HEMOGRAMA: Hemácias 5.580.000 ⚠️ (lev. acima) | Hgb 16,2 ✓ | Ht 47,7% ✓ | PLT 240.000 ✓ | Leuco 7.510 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 228 (ref <190) | HDL 47 ✓ | ⚠️ LDL 160 | Triglicérides 99 ✅\nGLICOSE: 85 ✓ | HbA1c 5,0% ✅ | Insulina 9,8 ✓\nFÍGADO: TGO 30 ✓ | TGP 49 ✓ | GamaGT 43 ✓ | Fosfatase Alcalina 55 ✓ | Bilirrubinas normais\nRENAL: Creatinina 1,07 ✓ | Ureia 42,4 ✓ | Ácido Úrico 5,2 ✓\nTIREOIDE: TSH 2,11 ✓ | T4L 1,32 ✓ | T3L 3,87 ✓ | Anti-TPO 37 ✓ (ref <60) | TRAb 0,10 ✓\nHORMÔNIOS: Testosterona 505 ✓ | DHEA-S 447 ✓ | LH 3,85 ✓ | FSH 1,90 ✓ | Estradiol 49,2 ✓ | ⚠️ Prolactina 18,1 (ref: até 17,7) | ⚠️ Cortisol 22,9 (ref: até 22,5)\nINFLAMATÓRIOS: PCR-us 0,94 ✓ | ⚠️ Fibrinogênio 353 (ref: até 350)\nVITAMINAS: B12 511 ✓ | Ác. Fólico 20,18 ✓ | Vit. D 58,9 ✓ | Ferritina 255 ✓\nMINERAIS: Zinco 114,9 ✓ | Cobre 88,4 ✓ | Magnésio 2,2 ✓ | Cálcio Iônico 1,20 ✓\nMETAIS PESADOS: Mercúrio <0,1 ✓ | Alumínio 3,4 ✓ | Cádmio <0,1 ✓ | Níquel 0,9 ✓\nCELÍACOS: Anti-Endomísio IgA/IgM/IgG Negativos | Anti-tTG IgA 0,5 ✓\nGENÉTICA: ⚠️ MTHFR C677T HETEROZIGOTO | ⚠️ MTHFR A1298C HETEROZIGOTO\nURINA: Normal | ⚠️ Indican POSITIVO (+) — possível disbiose intestinal' },
+  // 2023
+  { id:'20230517a', nome:'Painel Laboratorial Completo — 52 marcadores', tipo:'sangue', data:'2023-05-17', medico:'Dra. Michele Quaranta Panzan / Dr. Rafael Timbo Mourao', local:'Labclass / H. Pardini', obs:'HEMOGRAMA: Hemácias 5.360.000 ✓ | Hgb 15,3 ✓ | Ht 45,7% ✓ | PLT 251.000 ✓ | Leuco 6.760 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 205 (ref <190) | HDL 52 ✓ | ⚠️ LDL 132 | Triglicérides 112 ✓\nGLICOSE: 89 ✓ | HbA1c 4,8% ✅ | Insulina 8,1 ✓\nFÍGADO: TGO 30 ✓ | TGP 39 ✓ | GamaGT 43 ✓ | Fosfatase Alcalina 57 ✓ | Bilirrubinas normais\nRENAL: Creatinina 1,06 ✓ | RFG >90 ✅ | Ureia 29,5 ✓ | Ácido Úrico 5,5 ✓\nTIREOIDE: TSH 1,37 ✓ | T4L 1,25 ✓ | T3L 4,09 ✓\nHORMÔNIOS: Testosterona 565 ✓ | Test. Livre 14,12 ✓ | DHEA-S 423 ✓ | LH 3,66 ✓ | FSH 2,11 ✓ | Estradiol 41,3 ✓ | Prolactina 13,5 ✓ | Cortisol 21,0 ✓\nINFLAMATÓRIOS: PCR-us 1,16 — risco CV médio | Fibrinogênio 279 ✓ | Homocisteína 16,02 ✓\nVITAMINAS: B12 672 ✓ | Ác. Fólico 24,00 ✓ | Vit. D 61,2 ✓ | Ferritina 216,6 ✓\nMINERAIS: Zinco 95,4 ✓ | Cobre 80,0 ✓ | Magnésio 2,0 ✓ | Cálcio Iônico 1,14 ✓\nURINA: Normal, sem alterações.' },
+  { id:'20230517b', nome:'Sorologias + Cariótipo + PSA + Tipagem Sanguínea', tipo:'sangue', data:'2023-05-17', medico:'Dra. Michele Quaranta Panzan', local:'Labclass / H. Pardini', obs:'PSA Livre: 0,39 | PSA Total: 1,13 ng/mL ✓ (ref ≤2,50) | Relação PSA L/T: 35% ✓\nTIPAGEM: Grupo Sanguíneo A | Fator Rh(D) POSITIVO\nSEROLOGIAS: HIV 1/2: Não Reagente ✅ | VDRL: Não Reagente ✅ | HBsAg: Não Reagente ✅\nAnti-HBc IgG: Não Reagente ✅ | Anti-HBc IgM: Não Reagente ✅ | Anti-HCV: Não Reagente ✅ | Anti-HTLV I/II: Não Reagente ✅\nCARIÓTIPO COM BANDA G: 46,XY — Normal ✅\n20 células analisadas, 400 bandas. Sem alterações cromossômicas numéricas ou estruturais.' },
+  { id:'20231220a', nome:'Painel Laboratorial Completo — 57 marcadores', tipo:'sangue', data:'2023-12-20', medico:'Dr. Rafael Timbo Mourao', local:'Labclass / H. Pardini', obs:'HEMOGRAMA: Hemácias 5.130.000 ✓ | Hgb 14,7 ✓ | Ht 44,0% ✓ | PLT 222.000 ✓ | Leuco 6.360 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 205 (ref <190) | HDL 49 ✓ | ⚠️ LDL 134 | Triglicérides 111 ✓\nGLICOSE: 85 ✓ | HbA1c 5,0% ✅ | Insulina 8,2 ✓\nFÍGADO: TGO 33 ✓ | TGP 39 ✓ | GamaGT 44 ✓ | Fosfatase Alcalina 59 ✓\nRENAL: Creatinina 1,01 ✓ | RFG >90 ✅ | Ureia 32,1 ✓ | Ácido Úrico 7,3 ✓\nTIREOIDE: TSH 1,32 ✓ | T4L 1,20 ✓ | T3L 3,80 ✓\nHORMÔNIOS: Testosterona 428 ✓ | DHEA-S 412 ✓ | ⚠️ LH 1,19 (ref 1,50-9,30) | ⚠️ FSH 1,17 (ref 1,40-18,10) | Estradiol 24,3 ✓ | Prolactina 8,4 ✓ | Cortisol 13,8 ✓\nINFLAMATÓRIOS: ⚠️ PCR-us 2,06 — risco CV médio | Fibrinogênio 329 ✓ | Homocisteína 12,98 ✓\nVITAMINAS: B12 496 ✓ | Ác. Fólico 24,00 ✓ | Vit. D 50,0 ✓ | Ferritina 223,7 ✓\nMINERAIS: Zinco 93,3 ✓ | Cobre 75,9 ✓ | Magnésio 2,2 ✓ | Cálcio Iônico 1,13 ✓\nFERRO: Ferro Sérico 81 ✓ | TIBC 295 ✓ | Sat. Transferrina 27% ✓\nHEPATITES: HBsAg NR ✅ | Anti-HBs 876,9 UI/L (Imune!) | Anti-HCV NR ✅\nAUTOIMUNIDADE: Anti-Mitocôndria NR ✓ | Anti-Músculo Liso NR ✓ | ANCA NR ✓ | Anti-LKM1 NR ✓' },
+  // 2024
+  { id:'20241210a', nome:'Avaliação Pré-Anestésica — Transplante Capilar', tipo:'internacao', data:'2024-12-10', medico:'Tardemã Anestesiologia / Dr. Jose Rogerio Regis Jr.', local:'Dermatologia — Procedimento Ambulatorial', evento:'transplante-capilar-2024', obs:'Procedimento: Transplante Capilar. Diagnóstico: Alopécia.\n36 anos, 77kg, 1.71m, IMC 26.33, PA 136/75, FC 75, SpO2 98%.\nHgb: 14.8 | Ht: 43.1 | Leuco: 8250 | Plq: 234.000 | Glicemia: 87 | Ureia: 32.1 | Creatinina: 1.14\nECG: Ritmo sinusal FC 88, normal. Teste Ergométrico 11/12/24: sem isquemia.\nASA I. Risco cardíaco <1%. Liberado para cirurgia: SIM.' },
+  { id:'20241210b', nome:'Check-up Pré-Cirúrgico — Hemograma, Coagulograma, Lipidograma, Sorologias', tipo:'sangue', data:'2024-12-10', medico:'Dr. Fernando Carvalho de Vasconcelos', local:'Labclass / H. Pardini', evento:'transplante-capilar-2024', obs:'HEMOGRAMA: Hemácias 5.100.000 ✓ | Hgb 14,8 ✓ | Ht 43,1% ✓ | PLT 234.000 ✓ | Leuco 8.250 ✓\nCOAGULOGRAMA: TTPa 29s (ctrl 26s) ✓ | TP 11,8s | Atividade Protrombina 100% ✓ | INR 1,00 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 209 (ref <190) | HDL 52 ✓ | ⚠️ LDL 135 | Triglicérides 112 ✓\nBIOQUÍMICA: Glicose 87 ✓ | Creatinina 1,14 ✓ | ⚠️ RFG 85 (ref >90 — lev. reduzido) | Ureia 32,1 ✓ | TGO 26 ✓ | TGP 29 ✓\nSEROLOGIAS: HIV NR ✅ | Sífilis NR ✅ | HBsAg NR ✅ | Anti-HBs 978,7 UI/L (Imune!) | Anti-HCV NR ✅\nURINA: Normal, sem alterações.' },
+  { id:'20241230a', nome:'Painel Laboratorial Completo — 50+ marcadores', tipo:'sangue', data:'2024-12-30', medico:'Dr. Rafael Timbo Mourao', local:'Labclass / H. Pardini', obs:'HEMOGRAMA: Hemácias 5.040.000 ✓ | Hgb 14,6 ✓ | Ht 42,3% ✓ | PLT 254.000 ✓\n⚠️ Leucócitos 12.710 (ref: até 11.000) | ⚠️ Linfócitos 4.760 (ref: até 3.500) | ⚠️ Monócitos 1.080 (ref: até 1.000)\nINFLAMATÓRIOS: ⚠️ VHS 17mm (ref: até 10) | ⚠️ Fibrinogênio 357 (ref: até 350)\nPSA: Total 2,50 ng/mL (limite ref) | Livre 0,34 | ⚠️ Relação L/T 14% (ref >25%) — mas PSA ≤2,50\nHbA1c 5,1% ✓ | PTH 33,1 ✓ | Insulina 12,5 ✓ | Homocisteína 19,94 ✓\nHORMÔNIOS: Testosterona 563 ✓ | LH 4,76 ✓ | FSH 2,22 ✓ | Estradiol 26,4 ✓ | ⚠️ Prolactina 19,2 (ref: até 17,7) | DHEA-S 193 ✓ | Cortisol 8,4 ✓\nTIREOIDE: TSH 2,20 ✓ | T4L 1,47 ✓ | T3L 2,78 ✓\nVITAMINAS: B12 507 ✓ | Ác. Fólico 19,19 ✓ | Vit. D 39,0 ✓ | Ferritina 214,9 ✓\nMINERAIS: Magnésio 2,1 ✓ | Fósforo 3,6 ✓ | Potássio 3,7 ✓ | Sódio 141 ✓ | Cloretos 105 ✓\nFERRO: Ferro Sérico 70 ✓ | TIBC 286 ✓ | Sat. Transferrina 24% ✓ | CPK 68 ✓\nELETROFORESE PROTEÍNAS: Albumina 63,7% ✓ | Proteínas Totais 7,50 ✓ | Sem proteína monoclonal ✓\nURINA: Normal. Cristais de Oxalato de Cálcio (+) — achado isolado.\nNota: Leucocitose provavelmente reacional (processo inflamatório/infeccioso transitório).' },
+  { id:'20251203a', nome:'Painel Laboratorial Completo — 65 biomarcadores (SiPhox / Function Health)', tipo:'sangue', data:'2025-12-03', medico:'SiPhox Health', local:'Function Health (EUA)', obs:'HEMOGRAMA: Hemácias 5,3M ✓ | Hgb 15,7 ✓ | Ht 46,9% ✓ | PLT 222.000 ✓ | Leuco 6.700 ✓\nDiferencial: Neutrófilos 50,4% ✓ | Linfócitos 37,1% ✓ | ⚠️ Monócitos 9,8% (ref <8%) | Eosinófilos 2,1% ✓ | Basófilos 0,6% ✓\nMCV 88,5 ✓ | MCH 29,6 ✓ | MCHC 33,5 ✓ | RDW 12,7% ✓ | MPV 10,2 ✓\nLIPIDOGRAMA: ⚠️ Colesterol Total 217 (ref <200) | HDL 60 ✓ | ⚠️ LDL 142 (ref <100) | Triglicérides 59 ✅ (excelente)\n⚠️ ApoB 115 mg/dL (ref <90) | ⚠️ Non-HDL 157 (ref <130) | Ratio Col/HDL 3,6 | Lp(a) 10 nmol/L ✅ (baixo risco)\nMETABÓLICO: Glicose 91 ✓ | HbA1c 5,1% ✓ | Insulina 6 ✓ | HOMA-IR 1,3 ✓\nFUNÇÃO RENAL: Creatinina 1,02 ✓ | BUN 15 ✓ | Relação BUN/Cr 14,71 ✓ | eGFR 97 ✓\nFÍGADO: ALT 32 ✓ | AST 27 ✓ | ALP 52 ✓ | Bilirrubina Total 1,0 ✓\nPROTEÍNAS: ⚠️ Albumina 5,2 g/dL (ref 3,6-5,1 — lev. elevada) | Globulina 2,7 ✓ | Relação A/G 1,9 ✓ | Proteínas Totais 7,9 ✓\nELETRÓLITOS: Sódio 140 ✓ | Potássio 3,9 ✓ | Cloreto 103 ✓ | CO₂ 26 ✓ | Cálcio 9,5 ✓\nFERRO: Ferro 122 ✓ | Ferritina 190 ✓ | TIBC 338 ✓ | Saturação 36% ✓\nINFLAMATÓRIO: hs-CRP 0,9 mg/L ✓ | ⚠️ Homocisteína 12,2 µmol/L (ref <10 — elevada)\nHORMÔNIOS: Testosterona 539 ng/dL ✓ | Test. Livre 80,5 pg/mL ✓ | SHBG 26 ✓ | Estradiol 30 ✓ | LH 1,8 ✓ | FSH 2 ✓ | DHEA-S 357 ✓\nCortisol 16,8 ✓ | TSH 1,0 ✓ | Vitamina D 49 ✓\nDestaques: Perfil lipídico desfavorável (ApoB e LDL elevados). Homocisteína alta (MTHFR?). Triglicérides excelentes. Lp(a) baixo risco. Metabolismo glicídico ótimo.' },
+  // 2026 — 28/03 (HOJE)
+  { id:'20260326a', nome:'Painel Laboratorial Completo — 26 marcadores', tipo:'sangue', data:'2026-03-26', medico:'Dra. Rafael Timbo Mourao', local:'Laboratório (coleta domiciliar)', obs:'HEMOGRAMA: Hgb 16.1 | Ht 45.2% | Leuco 8.240 ✓ | PLT 227.000 ✓ — Todos normais.\nVIT. B12: 612 pg/mL ✓ | ÁCIDO FÓLICO: 24.00 ng/mL ✓ (excelente)\nGLICOSE: 89 mg/dL ✓ | INSULINA: 8.0 µUI/mL ✓ | HbA1c: 4.7% ✅ (excelente)\nFUNÇÃO RENAL: Creatinina 1.03 ✓ | Ureia 31.9 ✓ | RFG >90 ✅\nFÍGADO: TGP 41 ✓ | TGO 31 ✓ | GamaGT 38 ✓ (melhorou!) | Fosfatase alcalina 60 ✓ | Bilirrubinas normais ✓\nLIPIDIOGRAMA: Triglicerídeos 66 ✅ (excelente!) | Colesterol total 220 ⚠️ (ref <190) | HDL 58 ✓ | LDL 145 ⚠️ (meta baixo risco: <115)\nELETRÓLITOS: Sódio 143 ✓ | Potássio 4.3 ✓ | Cloretos 104 ✓ | Fósforo 3.8 ✓\nTIREOIDE: TSH 1.36 ✓ | T4 Livre 1.43 ✓ | T3 Livre 4.00 ✓ — Perfeito!\nPTH: 22.9 pg/mL ✓ | PROLACTINA: 11.6 ng/mL ✓\nZINCO: 109.3 µg/dL ✓ | COBRE: 84.6 µg/dL ✓\nÁCIDO ÚRICO: 5.9 mg/dL ✓' },
+  { id:'20260328a', nome:'Ultrassonografia Abdominal Total', tipo:'imagem', data:'2026-03-28', medico:'Dr. Henri Amedee Peret / Dra. Rafael Timbo Mourao', local:'Clínica Scanner, BH', obs:'Fígado: Volume normal, ecogenicidade usual — SEM esteatose desta vez ✅\nVesícula, pâncreas, baço: normais.\n⚠️ Foco hiperecogênico com sombra acústica no rim esquerdo (5.3mm) — cálculo renal sem caráter obstrutivo.\nBexiga: paredes regulares, vol. pré-miccional 225ml, resíduo 16ml.\nID: Cálculo renal esquerdo (5.3mm), sem obstrução. Demais aspectos normais.' },
+  { id:'20260328b', nome:'Ultrassonografia da Tireoide com Doppler', tipo:'imagem', data:'2026-03-28', medico:'Dr. Henri Amedee Peret / Dra. Rafael Timbo Mourao', local:'Clínica Scanner, BH', obs:'Volume total tireoide: 16.3 cm³ (normal).\n⚠️ Nódulo sólido isoecoico lobo esquerdo — TI-RADS 3 — 1.27 x 0.88 x 1.04 cm\nVascularização periférica e central ao Doppler. Sem calcificações.\nAumento focal tecido adiposo pré-traqueal (lipoma conhecido, 2.6 x 0.4 x 2.4cm).\nImpressão: Nódulo sólido TI-RADS 3 lobo esquerdo — controle evolutivo.' },
+  { id:'20260328c', nome:'Duplex Scan de Carótidas e Vertebrais', tipo:'imagem', data:'2026-03-28', medico:'Dra. Adriana Viggiani Rios de Castro (Ecografista Vascular)', local:'Clínica Scanner, BH', obs:'Sistema carotídeo DIREITO: IMT 0.6mm (normal). Bifurcação sem placas. Carótidas interna/externa normais. Vertebral direita 3.6mm, normal.\nSistema carotídeo ESQUERDO: IMT 0.6mm ✓.\n⚠️ BIFURCAÇÃO ESQUERDA: discreta placa ateromatosa com calcificação, estenose <10%.\nCarótida interna esq: espessamento focal 1.1mm (VR ≥1.4mm) — sem placa configurada.\nVertebral esquerda 3.2mm, normal.\nConclusão: Presença de discreta placa ateromatosa na bifurcação carotídea esquerda — PLAQUE-RADS 2.' }
+];
+
+let exames = [];
+let currentFilter = 'all';
+let chatHistory = [];
+let fileQueue = [];
+let apiKey = localStorage.getItem('av_api_key') || '';
+let lastResults = {};
+
+// ═══════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════
+function init() {
+  const stored = localStorage.getItem('saude_av_v3');
+  if (stored) {
+    exames = JSON.parse(stored);
+    // Add any seed entries not yet in storage
+    SEED.forEach(s => { if (!exames.find(e => e.id === s.id)) exames.push(s); });
+  } else {
+    exames = [...SEED];
+  }
+  save();
+  renderList();
+  updateApiBanner();
+}
+
+function save() { localStorage.setItem('saude_av_v3', JSON.stringify(exames)); }
+
+// ═══════════════════════════════════════════════════════
+// NAV
+// ═══════════════════════════════════════════════════════
+function goTo(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+page).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDER LIST
+// ═══════════════════════════════════════════════════════
+function renderList() {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const sort = document.getElementById('sort-select').value;
+  const isInternacaoView = currentFilter === 'internacao';
+  let filtered;
+  if (isInternacaoView) {
+    // Na aba Internação: mostrar os registros de internação E todos os exames vinculados por evento
+    const eventoIds = new Set();
+    exames.forEach(e => { if (e.tipo === 'internacao' && e.evento) eventoIds.add(e.evento); });
+    filtered = exames.filter(e => {
+      const inEvento = e.evento && eventoIds.has(e.evento);
+      const isInternacao = e.tipo === 'internacao';
+      const mf = isInternacao || inEvento;
+      const ms = !search || [e.nome, e.medico||'', e.local||'', e.obs||''].some(v => v.toLowerCase().includes(search));
+      return mf && ms;
+    });
+  } else {
+    filtered = exames.filter(e => {
+      const mf = currentFilter === 'all' || e.tipo === currentFilter;
+      const ms = !search || [e.nome, e.medico||'', e.local||'', e.obs||''].some(v => v.toLowerCase().includes(search));
+      return mf && ms;
+    });
+  }
+  filtered.sort((a,b) => { const da=new Date(a.data), db=new Date(b.data); return sort==='desc'?db-da:da-db; });
+  const groups = {};
+  filtered.forEach(e => {
+    const y = e.data ? new Date(e.data+'T12:00:00').getFullYear() : 'Sem data';
+    if (!groups[y]) groups[y] = [];
+    groups[y].push(e);
+  });
+  const years = Object.keys(groups).sort((a,b) => sort==='desc'?b-a:a-b);
+  const container = document.getElementById('list-container');
+  if (!filtered.length) {
+    container.innerHTML = `<div class="empty"><div class="empty-icon">🗂️</div><h3>Nenhum exame encontrado</h3><p style="color:var(--muted);margin-top:4px">Adicione exames ou ajuste os filtros.</p></div>`;
+  } else if (isInternacaoView) {
+    container.innerHTML = years.map(y => {
+      const items = groups[y];
+      // Agrupar por evento
+      const eventos = {};
+      const avulsos = [];
+      items.forEach(e => {
+        if (e.evento) {
+          if (!eventos[e.evento]) eventos[e.evento] = [];
+          eventos[e.evento].push(e);
+        } else {
+          avulsos.push(e);
+        }
+      });
+      let html = `<div class="year-group"><div class="year-label">${y} · ${items.length} registro${items.length>1?'s':''}</div>`;
+      // Renderizar grupos de evento
+      Object.keys(eventos).forEach(evId => {
+        const evItems = eventos[evId];
+        const principal = evItems.find(e => e.tipo === 'internacao') || evItems[0];
+        const d = principal.data ? new Date(principal.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+        html += `<div class="event-group">
+          <div class="event-header" onclick="this.parentElement.classList.toggle('collapsed')">
+            <span class="event-icon">🏥</span>
+            <span class="event-title">${principal.nome}</span>
+            <span class="event-meta">${d} · ${principal.local||''}</span>
+            <span class="event-badge">${evItems.length} registro${evItems.length>1?'s':''}</span>
+          </div>
+          <div class="event-body">${evItems.map(e => cardHTML(e)).join('')}</div>
+        </div>`;
+      });
+      // Renderizar avulsos
+      avulsos.forEach(e => { html += cardHTML(e); });
+      html += '</div>';
+      return html;
+    }).join('');
+  } else {
+    container.innerHTML = years.map(y => `
+      <div class="year-group">
+        <div class="year-label">${y} · ${groups[y].length} exame${groups[y].length>1?'s':''}</div>
+        ${groups[y].map(e => cardHTML(e)).join('')}
+      </div>`).join('');
+  }
+  // Sidebar stats
+  const allYears = new Set(exames.map(e => e.data ? new Date(e.data).getFullYear() : null).filter(Boolean));
+  const sorted = exames.filter(e=>e.data).sort((a,b)=>new Date(b.data)-new Date(a.data));
+  document.getElementById('sb-total').textContent = exames.length;
+  document.getElementById('sb-years').textContent = allYears.size || 0;
+  document.getElementById('sb-last').textContent = sorted[0] ? new Date(sorted[0].data).getFullYear() : '—';
+}
+
+function cardHTML(e) {
+  const d = e.data ? new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
+  const tipo = e.tipo || 'sangue';
+  return `
+    <div class="card" id="card-${e.id}">
+      <div class="card-header" onclick="toggleCard('${e.id}')">
+        <div class="card-stripe stripe-${tipo}"></div>
+        <div class="card-main">
+          <div class="card-icon icon-${tipo}">${ICONS[tipo]||'📄'}</div>
+          <div class="card-info">
+            <div class="card-name">${e.nome}</div>
+            <div class="card-meta">
+              <span class="meta-chip">📅 ${d}</span>
+              ${e.medico?`<span class="meta-chip">👤 ${e.medico.split('/')[0].trim()}</span>`:''}
+              ${e.local?`<span class="meta-chip">📍 ${e.local}</span>`:''}
+            </div>
+          </div>
+          <span class="badge badge-${tipo}">${LABELS[tipo]}</span>
+        </div>
+        <div class="card-toggle"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></div>
+      </div>
+      <div class="card-body">
+        <div><div class="field-label">Tipo</div><div class="field-value">${ICONS[tipo]} ${LABELS[tipo]}</div></div>
+        <div><div class="field-label">Data</div><div class="field-value">${d}</div></div>
+        ${e.medico?`<div><div class="field-label">Médico</div><div class="field-value">${e.medico}</div></div>`:'<div></div>'}
+        ${e.local?`<div><div class="field-label">Local</div><div class="field-value">${e.local}</div></div>`:'<div></div>'}
+        <div class="obs-full">
+          <div class="field-label">Observações / Resultados</div>
+          <textarea class="obs-textarea" id="obs-${e.id}" placeholder="Adicionar observações...">${e.obs||''}</textarea>
+        </div>
+        <div class="card-actions">
+          <button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>
+          <button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>
+          <button class="btn-sm btn-save-sm" onclick="saveObs('${e.id}',event)">Salvar</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function toggleCard(id) { document.getElementById('card-'+id).classList.toggle('open'); }
+
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.pill').forEach(p => p.className='pill');
+  btn.classList.add(f==='all'?'active':`active-${f}`);
+  renderList();
+}
+
+function saveObs(id, ev) {
+  const obs = document.getElementById('obs-'+id).value;
+  const e = exames.find(x=>x.id===id);
+  if (e) { e.obs = obs; save(); }
+  const b = ev.target; b.textContent='✓ Salvo!';
+  setTimeout(()=>{ b.textContent='Salvar'; }, 1500);
+}
+
+function deleteExame(id) {
+  if (!confirm('Excluir este exame?')) return;
+  exames = exames.filter(e=>e.id!==id);
+  save(); renderList();
+}
+
+function sendToChat(id) {
+  const e = exames.find(x=>x.id===id);
+  if (!e) return;
+  goTo('chat', document.querySelectorAll('.nav-item')[2]);
+  const prompt = `Quero entender melhor o exame "${e.nome}" de ${e.data}. ${e.obs?'Resultados registrados: '+e.obs.substring(0,500):''}`;
+  document.getElementById('chat-input').value = prompt;
+  sendChat();
+}
+
+// ═══════════════════════════════════════════════════════
+// MODAL
+// ═══════════════════════════════════════════════════════
+function openModal() {
+  document.getElementById('modal').classList.add('open');
+  document.getElementById('f-data').value = new Date().toISOString().split('T')[0];
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  ['f-nome','f-tipo','f-medico','f-local','f-obs'].forEach(id=>document.getElementById(id).value='');
+}
+document.getElementById('modal').addEventListener('click', e=>{ if(e.target===e.currentTarget) closeModal(); });
+
+function addExame(prefill) {
+  const nome = (prefill?.nome||document.getElementById('f-nome').value).trim();
+  const tipo = prefill?.tipo||document.getElementById('f-tipo').value;
+  const data = prefill?.data||document.getElementById('f-data').value;
+  if (!nome||!tipo||!data) { alert('Preencha nome, tipo e data.'); return; }
+  exames.push({ id: Date.now().toString(), nome, tipo, data, medico:(prefill?.medico||document.getElementById('f-medico').value||'').trim(), local:(prefill?.local||document.getElementById('f-local').value||'').trim(), obs:(prefill?.obs||document.getElementById('f-obs').value||'').trim() });
+  save();
+  if (!prefill) closeModal();
+  renderList();
+}
+
+// ═══════════════════════════════════════════════════════
+// UPLOAD & QUEUE
+// ═══════════════════════════════════════════════════════
+function addFiles(files, type) {
+  Array.from(files).forEach(f => {
+    fileQueue.push({ id: Date.now().toString()+Math.random(), file: f, type, status: 'pending', result: null });
+  });
+  renderQueue();
+  document.getElementById('process-btn').disabled = fileQueue.filter(i=>i.status==='pending').length === 0;
+}
+
+function renderQueue() {
+  const list = document.getElementById('queue-list');
+  const count = fileQueue.length;
+  document.getElementById('queue-count').textContent = count;
+  if (!count) { list.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Nenhum arquivo na fila ainda.</div>'; return; }
+  list.innerHTML = fileQueue.map(item => {
+    const icon = item.file.type.includes('pdf') ? '📄' : '📷';
+    const statusClass = {pending:'status-pending',processing:'status-processing',done:'status-done',error:'status-error'}[item.status];
+    const statusLabel = {pending:'Pendente',processing:'Processando...',done:'Concluído',error:'Erro'}[item.status];
+    return `<div class="queue-item">
+      <span class="queue-item-icon">${icon}</span>
+      <span class="queue-item-name">${item.file.name}</span>
+      <span class="queue-item-status ${statusClass}">${statusLabel}</span>
+      ${item.status==='pending'?`<button class="queue-item-remove" onclick="removeFromQueue('${item.id}')">✕</button>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('process-btn').disabled = fileQueue.filter(i=>i.status==='pending').length === 0 || !apiKey;
+}
+
+function removeFromQueue(id) {
+  fileQueue = fileQueue.filter(i=>i.id!==id);
+  renderQueue();
+}
+
+async function processQueue() {
+  const pending = fileQueue.filter(i=>i.status==='pending');
+  if (!pending.length) return;
+  if (!apiKey) { alert('Configure sua chave de API Anthropic primeiro.'); return; }
+
+  document.getElementById('process-btn').disabled = true;
+  document.getElementById('results-area').innerHTML = '';
+
+  for (const item of pending) {
+    item.status = 'processing';
+    renderQueue();
+    try {
+      const result = await processFile(item);
+      item.status = 'done';
+      item.result = result;
+      showResult(item, result);
+    } catch(err) {
+      item.status = 'error';
+      item.errorMsg = err.message || String(err);
+      console.error('Erro ao processar arquivo:', err);
+    }
+    renderQueue();
+  }
+  document.getElementById('process-btn').disabled = false;
+}
+
+async function processFile(item) {
+  const { file } = item;
+  const isPDF = file.type.includes('pdf') || file.name.toLowerCase().endsWith('.pdf');
+  
+  // Check file size (max ~20MB for API)
+  if (file.size > 20 * 1024 * 1024) {
+    throw new Error(`Arquivo muito grande (${(file.size/1024/1024).toFixed(1)}MB). Máximo: 20MB.`);
+  }
+  
+  const base64 = await fileToBase64(item.file);
+
+  const systemPrompt = `Você é um especialista em análise de exames médicos brasileiros. 
+Analise o documento fornecido e extraia TODAS as informações relevantes.
+
+Retorne APENAS um JSON válido neste formato exato:
+{
+  "nome": "Nome do exame (ex: Hemograma Completo)",
+  "tipo": "sangue|imagem|cardio|internacao",
+  "data": "YYYY-MM-DD",
+  "medico": "Nome do médico",
+  "local": "Nome do laboratório ou clínica",
+  "obs": "Resumo dos principais resultados e valores, incluindo alertas de valores fora da referência",
+  "resumo_ai": "Análise clínica em português: o que está normal, o que merece atenção, e recomendações gerais"
+}
+
+REGRAS para identificar o tipo:
+- "sangue": hemograma, bioquímica, hormônios, sorologias, qualquer exame laboratorial de sangue
+- "imagem": ultrassom, radiografia, tomografia, ressonância, ecografia, doppler
+- "cardio": ECG, holter, ecocardiograma, teste ergométrico, teste de inclinação, procedimentos cardíacos
+- "internacao": internações, altas hospitalares, avaliações pré-anestésicas, cirurgias
+
+Se houver múltiplos exames no mesmo documento, retorne o mais importante ou o conjunto como um painel.
+A data deve ser no formato YYYY-MM-DD. Se não encontrar, use a data atual.`;
+
+  const content = [];
+  if (isPDF) {
+    content.push({ type:'document', source:{ type:'base64', media_type:'application/pdf', data: base64.split(',')[1] } });
+  } else {
+    content.push({ type:'image', source:{ type:'base64', media_type: file.type || 'image/jpeg', data: base64.split(',')[1] } });
+  }
+  content.push({ type:'text', text:'Analise este exame médico e retorne o JSON solicitado.' });
+
+  let res;
+  try {
+    res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-api-key': apiKey, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1500, system: systemPrompt, messages:[{role:'user',content}] })
+    });
+  } catch(fetchErr) {
+    throw new Error(`Erro de rede/CORS: ${fetchErr.message}. Verifique se a chave API está correta.`);
+  }
+  
+  if (!res.ok) {
+    const errText = await res.text();
+    throw new Error(`HTTP ${res.status}: ${errText.substring(0,200)}`);
+  }
+
+  const data = await res.json();
+  if (data.error) throw new Error(`API Error: ${data.error.message || JSON.stringify(data.error)}`);
+  const text = data.content?.find(b=>b.type==='text')?.text || '{}';
+  // Extract JSON from response even if surrounded by text
+  const clean = text.replace(/```json|```/g,'').trim();
+  // Try to find JSON object in the text
+  const jsonMatch = clean.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) throw new Error('AI não retornou JSON válido. Resposta: ' + clean.substring(0,100));
+  return JSON.parse(jsonMatch[0]);
+}
+
+function fileToBase64(file) {
+  return new Promise((res,rej) => {
+    const r = new FileReader();
+    r.onload = ()=>res(r.result);
+    r.onerror = ()=>rej(new Error('Read failed'));
+    r.readAsDataURL(file);
+  });
+}
+
+function showResult(item, result) {
+  const area = document.getElementById('results-area');
+  const resultId = 'result-'+item.id;
+  const tipo = result.tipo || 'sangue';
+  const dataFmt = result.data ? new Date(result.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'long',year:'numeric'}) : '—';
+  const html = `
+    <div class="result-card" id="${resultId}">
+      <div class="result-header">
+        <div class="ai-dot"></div>
+        <span style="font-weight:600;font-size:13px">${ICONS[tipo]||'📄'} ${result.nome||item.file.name}</span>
+        <span class="badge badge-${tipo}" style="margin-left:auto">${LABELS[tipo]||tipo}</span>
+      </div>
+      <div class="result-body">${result.resumo_ai||'Análise concluída.'}</div>
+      <div class="result-save">
+        <span style="font-size:11px;color:var(--muted2);flex-shrink:0">Salvar no histórico:</span>
+        <input type="text" id="save-nome-${item.id}" value="${result.nome||''}" placeholder="Nome do exame" style="flex:1;min-width:120px">
+        <input type="date" id="save-data-${item.id}" value="${result.data||new Date().toISOString().split('T')[0]}">
+        <select id="save-tipo-${item.id}">
+          <option value="sangue" ${tipo==='sangue'?'selected':''}>🩸 Sangue</option>
+          <option value="imagem" ${tipo==='imagem'?'selected':''}>🩻 Imagem</option>
+          <option value="cardio" ${tipo==='cardio'?'selected':''}>❤️ Cardio</option>
+          <option value="internacao" ${tipo==='internacao'?'selected':''}>🏥 Internação</option>
+        </select>
+        <button class="btn-sm btn-save-sm" onclick="saveResult('${item.id}')">💾 Salvar</button>
+      </div>
+    </div>`;
+  area.insertAdjacentHTML('beforeend', html);
+  lastResults[item.id] = result;
+}
+
+function saveResult(itemId) {
+  const result = lastResults[itemId];
+  const nome = document.getElementById('save-nome-'+itemId)?.value.trim() || result?.nome || 'Exame';
+  const data = document.getElementById('save-data-'+itemId)?.value || result?.data;
+  const tipo = document.getElementById('save-tipo-'+itemId)?.value || result?.tipo || 'sangue';
+  if (!data) { alert('Informe a data.'); return; }
+  exames.push({ id: Date.now().toString(), nome, tipo, data, medico: result?.medico||'', local: result?.local||'', obs: (result?.obs||'') + (result?.resumo_ai ? '\n\nAnálise AI:\n'+result.resumo_ai.substring(0,500) : '') });
+  save(); renderList();
+  const card = document.getElementById('result-'+itemId);
+  if (card) { const footer = card.querySelector('.result-save'); footer.innerHTML = '<span style="color:var(--green);font-size:12px">✓ Salvo no histórico!</span>'; }
+}
+
+// API KEY
+function saveApiKey() {
+  apiKey = document.getElementById('api-key-input').value.trim();
+  if (apiKey) { localStorage.setItem('av_api_key', apiKey); updateApiBanner(); }
+}
+
+function updateApiBanner() {
+  const banner = document.getElementById('api-banner');
+  if (apiKey) {
+    banner.innerHTML = '<span>✅</span> <span>API Anthropic configurada. AI pronta para analisar seus exames.</span> <button class="btn-set-key" onclick="document.getElementById(\'api-banner\').innerHTML=\'<span>🔑</span><input type=password class=api-key-input id=api-key-input placeholder=sk-ant-...><button class=btn-set-key onclick=saveApiKey()>Salvar</button>\';apiKey=\'\'">Trocar chave</button>';
+    renderQueue();
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+// CHAT
+// ═══════════════════════════════════════════════════════
+async function sendChat() {
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = ''; input.style.height = 'auto';
+  input.disabled = true;
+  document.getElementById('chat-send-btn').disabled = true;
+  addBubble('user', msg);
+  chatHistory.push({role:'user', content: msg});
+  const typingId = addBubble('ai', null, true);
+
+  const historico = exames.length > 0
+    ? `HISTÓRICO MÉDICO COMPLETO DE ANDRÉ VASCONCELOS (37 anos, nascido em 24/07/1988, BH/MG):\n\n${exames.sort((a,b)=>new Date(a.data)-new Date(b.data)).map(e=>`[${e.data}] ${e.nome} (${LABELS[e.tipo]||e.tipo}) — ${e.medico||''}${e.obs?' | Resultados: '+e.obs.substring(0,300):''}`).join('\n')}`
+    : 'Nenhum exame registrado.';
+
+  const system = `Você é uma assistente médica pessoal especializada em análise de histórico clínico.
+Paciente: André Nunes de Vasconcelos, 37 anos, brasileiro, mora em Mountain View, Califórnia.
+Histórico médico relevante: histórico de arritmia supraventricular (em acompanhamento desde 2003, bem controlada), nódulo tireoide lobo esquerdo TI-RADS 3 (acompanhamento), cálculo renal esquerdo 5.3mm (sem obstrução), discreta placa ateromatosa na bifurcação carotídea esquerda (Plaque-RADS 2), colesterol total levemente elevado (220 mg/dL).
+
+Responda em português do Brasil, de forma amigável, clara e informativa. 
+Quando relevante, referencie exames específicos do histórico com a data.
+Sempre reforce que suas análises são informativas e não substituem consulta médica profissional.
+
+${historico}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json', 'x-api-key': apiKey||'', 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, system, messages: chatHistory })
+    });
+    const data = await res.json();
+    const reply = data.content?.find(b=>b.type==='text')?.text || (data.error ? `Erro: ${data.error.message}` : 'Não foi possível processar.');
+    chatHistory.push({role:'assistant', content: reply});
+    const el = document.getElementById(typingId);
+    el.querySelector('.bubble-inner').textContent = reply;
+  } catch(err) {
+    const el = document.getElementById(typingId);
+    el.querySelector('.bubble-inner').textContent = 'Erro de conexão. Configure sua chave API na página de importação.';
+  }
+  input.disabled = false;
+  document.getElementById('chat-send-btn').disabled = false;
+  input.focus();
+}
+
+function addBubble(role, text, isLoading) {
+  const id = 'bubble-'+Date.now()+Math.random();
+  const container = document.getElementById('chat-messages');
+  const inner = isLoading ? `<div class="typing-dots"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>` : (text||'');
+  container.insertAdjacentHTML('beforeend', `
+    <div class="chat-bubble ${role}" id="${id}">
+      <div class="bubble-label">${role==='user'?'Você':'AI Médica'}</div>
+      <div class="bubble-inner">${inner}</div>
+    </div>`);
+  container.scrollTop = container.scrollHeight;
+  return id;
+}
+
+// Drag and drop zones
+['pdf','img'].forEach(z => {
+  const zone = document.getElementById('zone-'+z);
+  if (!zone) return;
+  zone.addEventListener('dragover', e=>{ e.preventDefault(); zone.classList.add('drag'); });
+  zone.addEventListener('dragleave', ()=>zone.classList.remove('drag'));
+  zone.addEventListener('drop', e=>{
+    e.preventDefault(); zone.classList.remove('drag');
+    const files = Array.from(e.dataTransfer.files);
+    addFiles(files, z);
+  });
+});
+
+// START
+init();
+</script>
+</body>
+</html>
