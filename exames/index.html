@@ -127,7 +127,7 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
 .obs-textarea { width: 100%; min-height: 65px; padding: 9px 11px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); font-family: 'Syne', sans-serif; font-size: 12.5px; color: var(--text); resize: vertical; outline: none; transition: border-color 0.2s; line-height: 1.6; }
 .obs-textarea:focus { border-color: var(--accent); }
 .obs-textarea::placeholder { color: var(--muted); }
-.card-actions { grid-column: 1/-1; display: flex; justify-content: flex-end; gap: 7px; }
+.card-actions { grid-column: 1/-1; display: flex; justify-content: flex-end; gap: 7px; flex-wrap: wrap; }
 .btn-sm { padding: 5px 12px; border-radius: 6px; font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
 .btn-save-sm { background: var(--accent); color: #fff; border: none; }
 .btn-save-sm:hover { background: #3a87f0; }
@@ -135,6 +135,27 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
 .btn-delete-sm:hover { background: var(--blood-bg); }
 .btn-ai-sm { background: var(--cardio-bg); color: var(--cardio); border: 1px solid rgba(167,139,250,0.2); display: flex; align-items: center; gap: 4px; }
 .btn-ai-sm:hover { background: rgba(167,139,250,0.2); }
+.btn-edit-sm { background: var(--surface); color: var(--muted2); border: 1px solid var(--border); }
+.btn-edit-sm:hover { background: var(--surface2); color: var(--text); }
+.btn-file-sm { background: var(--green-bg); color: var(--green); border: 1px solid rgba(22,163,74,0.2); display: flex; align-items: center; gap: 4px; text-decoration: none; }
+.btn-file-sm:hover { background: rgba(22,163,74,0.15); }
+
+/* Results read-only view */
+.results-view { grid-column: 1/-1; }
+.results-content { background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-sm); padding: 12px 14px; font-size: 12.5px; line-height: 1.7; color: var(--text); white-space: pre-wrap; font-family: 'JetBrains Mono', monospace; max-height: 400px; overflow-y: auto; }
+.results-content .res-line { display: flex; flex-wrap: wrap; gap: 4px; padding: 2px 0; border-bottom: 1px solid var(--surface2); }
+.results-content .res-line:last-child { border-bottom: none; }
+.results-content .res-key { color: var(--muted2); font-weight: 500; min-width: 60px; }
+.results-content .res-val { color: var(--text); font-weight: 600; }
+.results-content .res-warn { color: var(--warn); font-weight: 700; }
+.results-content .res-ok { color: var(--green); }
+.results-empty { color: var(--muted); font-style: italic; font-size: 12px; padding: 8px 0; }
+.edit-section { display: none; grid-column: 1/-1; }
+.card.editing .edit-section { display: block; }
+.card.editing .results-view { display: none; }
+.card.editing .card-actions-view { display: none; }
+.card .card-actions-edit { display: none; }
+.card.editing .card-actions-edit { display: flex; }
 
 /* ALERTS */
 .alert-warn { background: var(--warn-bg); border: 1px solid rgba(251,146,60,0.25); border-radius: var(--r-sm); padding: 8px 12px; font-size: 12px; color: var(--warn); display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
@@ -545,6 +566,10 @@ O que você gostaria de explorar?</div>
       <label class="form-label">Observações / Resultados</label>
       <textarea class="form-textarea" id="f-obs" placeholder="Valores, impressão diagnóstica, achados..."></textarea>
     </div>
+    <div class="form-row">
+      <label class="form-label">Link do Laudo (opcional)</label>
+      <input class="form-input" id="f-arquivo" type="url" placeholder="https://drive.google.com/file/d/...">
+    </div>
     <div class="modal-actions">
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-confirm" onclick="addExame()">Salvar</button>
@@ -916,9 +941,38 @@ function renderList() {
   document.getElementById('sb-last').textContent = sorted[0] ? new Date(sorted[0].data).getFullYear() : '—';
 }
 
+function formatResults(obs) {
+  if (!obs || !obs.trim()) return '<div class="results-empty">Nenhum resultado registrado.</div>';
+  const lines = obs.split('\n').filter(l => l.trim());
+  return lines.map(line => {
+    // Detect warning markers
+    const isWarn = /⚠️|⚠|alto|elevad|acima/i.test(line);
+    // Try to parse "Key: Value" or "Key = Value" patterns
+    const match = line.match(/^([^:|\n]{2,40})\s*[:=]\s*(.+)$/);
+    if (match) {
+      const cls = isWarn ? 'res-warn' : 'res-ok';
+      return `<div class="res-line"><span class="res-key">${match[1].trim()}</span><span class="res-val ${cls}">${match[2].trim()}</span></div>`;
+    }
+    // Pipe-separated values: "WBC: 6.2 | LY: 39.8%"
+    if (line.includes('|')) {
+      const parts = line.split('|').map(p => {
+        const m2 = p.trim().match(/^([^:]{1,30}):\s*(.+)$/);
+        if (m2) {
+          const cls2 = isWarn ? 'res-warn' : '';
+          return `<span class="res-key">${m2[1].trim()}:</span> <span class="res-val ${cls2}">${m2[2].trim()}</span>`;
+        }
+        return `<span class="${isWarn?'res-warn':''}">${p.trim()}</span>`;
+      });
+      return `<div class="res-line">${parts.join(' &nbsp;│&nbsp; ')}</div>`;
+    }
+    return `<div class="res-line"><span class="${isWarn?'res-warn':''}">${line}</span></div>`;
+  }).join('');
+}
+
 function cardHTML(e) {
   const d = e.data ? new Date(e.data+'T12:00:00').toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'}) : '—';
   const tipo = e.tipo || 'sangue';
+  const hasFile = e.arquivo && e.arquivo.trim();
   return `
     <div class="card" id="card-${e.id}">
       <div class="card-header" onclick="toggleCard('${e.id}')">
@@ -931,6 +985,7 @@ function cardHTML(e) {
               <span class="meta-chip">📅 ${d}</span>
               ${e.medico?`<span class="meta-chip">👤 ${e.medico.split('/')[0].trim()}</span>`:''}
               ${e.local?`<span class="meta-chip">📍 ${e.local}</span>`:''}
+              ${hasFile?'<span class="meta-chip">📎 Laudo</span>':''}
             </div>
           </div>
           <span class="badge badge-${tipo}">${LABELS[tipo]}</span>
@@ -942,13 +997,26 @@ function cardHTML(e) {
         <div><div class="field-label">Data</div><div class="field-value">${d}</div></div>
         ${e.medico?`<div><div class="field-label">Médico</div><div class="field-value">${e.medico}</div></div>`:'<div></div>'}
         ${e.local?`<div><div class="field-label">Local</div><div class="field-value">${e.local}</div></div>`:'<div></div>'}
-        <div class="obs-full">
+        <div class="results-view">
+          <div class="field-label">Resultados</div>
+          <div class="results-content">${formatResults(e.obs)}</div>
+        </div>
+        <div class="edit-section">
           <div class="field-label">Observações / Resultados</div>
           <textarea class="obs-textarea" id="obs-${e.id}" placeholder="Adicionar observações...">${e.obs||''}</textarea>
+          <div style="margin-top:8px;">
+            <div class="field-label">Link do Laudo (Google Drive, etc.)</div>
+            <input type="url" class="obs-textarea" id="arquivo-${e.id}" placeholder="https://drive.google.com/..." value="${e.arquivo||''}" style="min-height:auto;padding:8px 11px;font-size:12px;">
+          </div>
         </div>
-        <div class="card-actions">
-          <button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>
+        <div class="card-actions card-actions-view">
+          ${hasFile?`<a class="btn-sm btn-file-sm" href="${e.arquivo}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📄 Ver Laudo</a>`:''}
           <button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>
+          <button class="btn-sm btn-edit-sm" onclick="enterEdit('${e.id}')">✏️ Editar</button>
+        </div>
+        <div class="card-actions card-actions-edit">
+          <button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>
+          <button class="btn-sm btn-edit-sm" onclick="exitEdit('${e.id}')">Cancelar</button>
           <button class="btn-sm btn-save-sm" onclick="saveObs('${e.id}',event)">Salvar</button>
         </div>
       </div>
@@ -956,6 +1024,8 @@ function cardHTML(e) {
 }
 
 function toggleCard(id) { document.getElementById('card-'+id).classList.toggle('open'); }
+function enterEdit(id) { document.getElementById('card-'+id).classList.add('editing'); }
+function exitEdit(id) { document.getElementById('card-'+id).classList.remove('editing'); }
 
 function setFilter(f, btn) {
   currentFilter = f;
@@ -966,8 +1036,12 @@ function setFilter(f, btn) {
 
 function saveObs(id, ev) {
   const obs = document.getElementById('obs-'+id).value;
+  const arqEl = document.getElementById('arquivo-'+id);
+  const arquivo = arqEl ? arqEl.value.trim() : '';
   const e = exames.find(x=>x.id===id);
-  if (e) { e.obs = obs; save(); }
+  if (e) { e.obs = obs; e.arquivo = arquivo; save(); }
+  exitEdit(id);
+  renderList();
   const b = ev.target; b.textContent='✓ Salvo!';
   setTimeout(()=>{ b.textContent='Salvar'; }, 1500);
 }
@@ -1005,7 +1079,7 @@ function addExame(prefill) {
   const tipo = prefill?.tipo||document.getElementById('f-tipo').value;
   const data = prefill?.data||document.getElementById('f-data').value;
   if (!nome||!tipo||!data) { alert('Preencha nome, tipo e data.'); return; }
-  exames.push({ id: Date.now().toString(), nome, tipo, data, medico:(prefill?.medico||document.getElementById('f-medico').value||'').trim(), local:(prefill?.local||document.getElementById('f-local').value||'').trim(), obs:(prefill?.obs||document.getElementById('f-obs').value||'').trim() });
+  exames.push({ id: Date.now().toString(), nome, tipo, data, medico:(prefill?.medico||document.getElementById('f-medico').value||'').trim(), local:(prefill?.local||document.getElementById('f-local').value||'').trim(), obs:(prefill?.obs||document.getElementById('f-obs').value||'').trim(), arquivo:(prefill?.arquivo||document.getElementById('f-arquivo')?.value||'').trim() });
   save();
   if (!prefill) closeModal();
   renderList();
