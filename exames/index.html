@@ -402,8 +402,19 @@ body { font-family: 'Syne', sans-serif; background: var(--bg); color: var(--text
       <span style="font-size:18px; vertical-align:middle; margin-right:6px;">🆔</span> Entrar com Face ID
     </button>
     <a href="#" onclick="forgotPassword(); return false;" style="display:inline-block; margin-top:14px; font-size:12px; color:var(--accent); text-decoration:none;">Esqueci minha senha</a>
-    <br>
-    <a href="../" style="display:inline-block; margin-top:8px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
+    <div style="margin-top:24px; padding-top:20px; border-top:1px solid var(--border);">
+      <p style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px;">Acesso por convite</p>
+      <form id="invite-form" onsubmit="return tryInvite(event)" style="display:flex; gap:8px;">
+        <input id="invite-code" type="text" placeholder="Codigo de convite" autocomplete="off"
+          style="flex:1; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:13px; color:var(--text); outline:none;">
+        <button type="submit"
+          style="padding:10px 16px; background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:var(--r-sm); font-family:'Syne',sans-serif; font-size:13px; font-weight:600; cursor:pointer; transition:all 0.15s; white-space:nowrap;">
+          Entrar
+        </button>
+      </form>
+      <p id="invite-error" style="font-size:12px; color:var(--blood); min-height:16px; margin-top:4px;"></p>
+    </div>
+    <a href="../" style="display:inline-block; margin-top:12px; font-size:12px; color:var(--muted); text-decoration:none;">← Voltar ao menu</a>
   </div>
 </div>
 
@@ -622,6 +633,8 @@ O que você gostaria de explorar?</div>
 // ═══════════════════════════════════════════════════════
 // LOGIN GATE
 const AUTH_HASH = '70fb95ac6eb3394493bb325b0b985b5d7fa0167bd5db4afdba5686dcd01786b3';
+const INVITE_HASH = '4cbdd4e39c183128f06677e17e8454c16bd3979c9b59808f2a2a33bbb75d387f';
+let isGuest = false;
 function sha256(str) {
   const buf = new TextEncoder().encode(str);
   return crypto.subtle.digest('SHA-256', buf).then(h => {
@@ -719,7 +732,7 @@ function dismissBiometricModal() {
 
 // ── Login ──
 function grantAccess() {
-  sessionStorage.setItem('saude_auth', '1');
+  if (!isGuest) sessionStorage.setItem('saude_auth', '1');
   document.getElementById('login-gate').style.display = 'none';
   document.getElementById('app-main').style.display = '';
 }
@@ -741,16 +754,64 @@ function tryLogin(e) {
   });
   return false;
 }
+function tryInvite(e) {
+  e.preventDefault();
+  const code = document.getElementById('invite-code').value.trim();
+  if (!code) { document.getElementById('invite-error').textContent = 'Digite o codigo.'; return false; }
+  sha256(code).then(hash => {
+    if (hash === INVITE_HASH) {
+      isGuest = true;
+      sessionStorage.setItem('saude_auth', 'guest');
+      grantAccess();
+      applyGuestMode();
+    } else {
+      document.getElementById('invite-error').textContent = 'Codigo invalido.';
+      document.getElementById('invite-code').value = '';
+    }
+  });
+  return false;
+}
+
+function applyGuestMode() {
+  // Hide all edit/delete/analyze buttons
+  document.querySelectorAll('.btn-edit-sm, .btn-delete-sm, .btn-save-sm, .btn-ai-sm').forEach(el => el.style.display = 'none');
+  document.querySelectorAll('.card-actions-edit').forEach(el => el.style.display = 'none');
+  // Hide Upload and Chat nav items (sidebar)
+  document.querySelectorAll('.nav-item').forEach(item => {
+    if (item.textContent.includes('Importar') || item.textContent.includes('Chat')) item.style.display = 'none';
+  });
+  // Hide "Adicionar" button and new exam modal trigger
+  document.querySelectorAll('.btn-primary[onclick*="openModal"], .btn-add, [onclick*="openNew"]').forEach(el => el.style.display = 'none');
+  // Hide API key banner
+  const apiBanner = document.getElementById('api-banner');
+  if (apiBanner) apiBanner.style.display = 'none';
+  // Hide Upload and Chat tabs in mobile nav
+  document.querySelectorAll('.mob-tab').forEach(tab => {
+    if (tab.textContent.includes('Importar') || tab.textContent.includes('Chat')) tab.style.display = 'none';
+  });
+  // Add guest badge to sidebar
+  const logo = document.querySelector('.logo');
+  if (logo && !document.getElementById('guest-badge')) {
+    const badge = document.createElement('div');
+    badge.id = 'guest-badge';
+    badge.style.cssText = 'margin-top:10px; padding:4px 10px; background:var(--accent-glow); border:1px solid var(--accent); border-radius:12px; font-family:"JetBrains Mono",monospace; font-size:10px; color:var(--accent); text-transform:uppercase; letter-spacing:0.5px; display:inline-block;';
+    badge.textContent = '👁 Modo Visitante';
+    logo.appendChild(badge);
+  }
+}
+
 function forgotPassword() {
   const subject = encodeURIComponent('Saude AV — Redefinir senha');
   const body = encodeURIComponent('Oi Andre,\n\nVoce solicitou redefinicao de senha do Saude AV.\n\nLogin: andrenvasc@gmail.com\nSenha atual: [consulte seus registros]\n\nAcesse: https://andrenvasc.github.io/exames/');
   window.location.href = 'mailto:andrenvasc@gmail.com?subject=' + subject + '&body=' + body;
 }
 // Auto-login if already authenticated this session
-if (sessionStorage.getItem('saude_auth') === '1') {
+if (sessionStorage.getItem('saude_auth') === 'guest') isGuest = true;
+if (sessionStorage.getItem('saude_auth') === '1' || sessionStorage.getItem('saude_auth') === 'guest') {
   document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('login-gate').style.display = 'none';
     document.getElementById('app-main').style.display = '';
+    if (isGuest) applyGuestMode();
   });
 }
 // Show biometric button on login screen if enrolled
@@ -1052,14 +1113,14 @@ function cardHTML(e) {
         </div>
         <div class="card-actions card-actions-view">
           ${hasFile?`<a class="btn-sm btn-file-sm" href="${e.arquivo}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📄 Ver Laudo</a>`:''}
-          <button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>
-          <button class="btn-sm btn-edit-sm" onclick="enterEdit('${e.id}')">✏️ Editar</button>
+          ${isGuest?'':`<button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>`}
+          ${isGuest?'':`<button class="btn-sm btn-edit-sm" onclick="enterEdit('${e.id}')">✏️ Editar</button>`}
         </div>
-        <div class="card-actions card-actions-edit">
+        ${isGuest?'':`<div class="card-actions card-actions-edit">
           <button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>
           <button class="btn-sm btn-edit-sm" onclick="exitEdit('${e.id}')">Cancelar</button>
           <button class="btn-sm btn-save-sm" onclick="saveObs('${e.id}',event)">Salvar</button>
-        </div>
+        </div>`}
       </div>
     </div>`;
 }
