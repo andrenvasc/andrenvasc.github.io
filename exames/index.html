@@ -773,21 +773,20 @@ function tryInvite(e) {
 }
 
 function applyGuestMode() {
-  // Hide all edit/delete/analyze buttons
-  document.querySelectorAll('.btn-edit-sm, .btn-delete-sm, .btn-save-sm, .btn-ai-sm').forEach(el => el.style.display = 'none');
-  document.querySelectorAll('.card-actions-edit').forEach(el => el.style.display = 'none');
-  // Hide Upload and Chat nav items (sidebar)
+  // Hide delete buttons only
+  document.querySelectorAll('.btn-delete-sm').forEach(el => el.style.display = 'none');
+  // Hide Upload nav item (sidebar) — keep Chat AI
   document.querySelectorAll('.nav-item').forEach(item => {
-    if (item.textContent.includes('Importar') || item.textContent.includes('Chat')) item.style.display = 'none';
+    if (item.textContent.includes('Importar')) item.style.display = 'none';
   });
   // Hide "Adicionar" button and new exam modal trigger
   document.querySelectorAll('.btn-primary[onclick*="openModal"], .btn-add, [onclick*="openNew"]').forEach(el => el.style.display = 'none');
   // Hide API key banner
   const apiBanner = document.getElementById('api-banner');
   if (apiBanner) apiBanner.style.display = 'none';
-  // Hide Upload and Chat tabs in mobile nav
+  // Hide Upload tab in mobile nav — keep Chat AI
   document.querySelectorAll('.mob-tab').forEach(tab => {
-    if (tab.textContent.includes('Importar') || tab.textContent.includes('Chat')) tab.style.display = 'none';
+    if (tab.textContent.includes('Importar')) tab.style.display = 'none';
   });
   // Add guest badge to sidebar
   const logo = document.querySelector('.logo');
@@ -1113,14 +1112,14 @@ function cardHTML(e) {
         </div>
         <div class="card-actions card-actions-view">
           ${hasFile?`<a class="btn-sm btn-file-sm" href="${e.arquivo}" target="_blank" rel="noopener" onclick="event.stopPropagation()">📄 Ver Laudo</a>`:''}
-          ${isGuest?'':`<button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>`}
-          ${isGuest?'':`<button class="btn-sm btn-edit-sm" onclick="enterEdit('${e.id}')">✏️ Editar</button>`}
+          <button class="btn-sm btn-ai-sm" onclick="sendToChat('${e.id}')">✨ Analisar</button>
+          <button class="btn-sm btn-edit-sm" onclick="enterEdit('${e.id}')">✏️ Editar</button>
         </div>
-        ${isGuest?'':`<div class="card-actions card-actions-edit">
-          <button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>
+        <div class="card-actions card-actions-edit">
+          ${isGuest?'':`<button class="btn-sm btn-delete-sm" onclick="deleteExame('${e.id}')">Excluir</button>`}
           <button class="btn-sm btn-edit-sm" onclick="exitEdit('${e.id}')">Cancelar</button>
           <button class="btn-sm btn-save-sm" onclick="saveObs('${e.id}',event)">Salvar</button>
-        </div>`}
+        </div>
       </div>
     </div>`;
 }
