@@ -243,17 +243,20 @@ h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6
       <div class="card-lock">🔒 Requer login</div>
     </a>
 
-    <a class="card card-metas" href="#metas">
+    <div class="card card-metas" onclick="toggleMetas()" style="cursor:pointer">
       <div class="card-icon">🎯</div>
       <div class="card-title">Metas</div>
       <div class="card-desc">Dashboard de progresso — treino, peso e saúde</div>
       <span class="card-badge badge-purple">Aberto</span>
-    </a>
+    </div>
   </div>
 
   <!-- METAS -->
-  <section id="metas">
-    <h2 class="section-title">🎯 Metas</h2>
+  <section id="metas" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+      <h2 class="section-title" style="margin-bottom:0">🎯 Metas</h2>
+      <button onclick="toggleMetas()" style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:8px 16px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);cursor:pointer;transition:color 0.2s,border-color 0.2s;" onmouseover="this.style.color='var(--text)';this.style.borderColor='var(--text)'" onmouseout="this.style.color='var(--muted)';this.style.borderColor='var(--border)'">✕ Fechar</button>
+    </div>
     <div class="metas-grid">
 
       <!-- 5K -->
@@ -335,12 +338,24 @@ h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6
 
   <!-- FOOTER -->
   <div class="footer">
+    <p style="margin-bottom:6px;font-size:12px;letter-spacing:0.3px;">Saúde, dados e progresso — tudo num só lugar.</p>
     <a href="https://github.com/andrenvasc" target="_blank" rel="noopener">github.com/andrenvasc</a>
   </div>
 
 </div>
 
 <script>
+function toggleMetas() {
+  const section = document.getElementById('metas');
+  if (section.style.display === 'none') {
+    section.style.display = 'block';
+    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  } else {
+    section.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
 (function() {
   const weightInput = document.getElementById('weightCurrent');
   const goalInput = document.getElementById('weightGoal');
