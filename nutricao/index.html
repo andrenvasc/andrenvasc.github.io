@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Saude & Nutricao — Andre Vasconcelos</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+/* ===== THEME ===== */
+:root {
+  --bg: #fafbfe;
+  --surface: #ffffff;
+  --surface2: #f0f2f7;
+  --text: #1a1d2e;
+  --muted: #8891a6;
+  --border: #e4e8f1;
+  --accent: #22c55e;
+  --radius: 16px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --surface2: #1c1c22;
+    --text: #e8e8ed;
+    --muted: #9898a8;
+    --border: #2a2a34;
+    --accent: #22c55e;
+  }
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: 90px;
+}
+
+/* ===== HEADER ===== */
+.header {
+  text-align: center;
+  padding: 40px 20px 0;
+}
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 20px;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+.header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+}
+.header .subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+/* ===== TABS ===== */
+.tabs {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  padding: 24px 20px 0;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  padding-bottom: 16px;
+}
+.tab-btn {
+  font-family: 'Outfit', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 24px;
+  border-radius: 100px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.25s;
+}
+.tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+}
+.tab-btn:not(.active):hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+/* ===== CONTENT ===== */
+.container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* ===== MEAL PLAN CARDS ===== */
+.plan-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.plan-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.plan-card-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+.plan-card-kcal {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  background: rgba(34,197,94,0.1);
+  padding: 4px 12px;
+  border-radius: 100px;
+}
+
+/* ===== MEAL ROW (grid) ===== */
+.meal-row {
+  display: grid;
+  grid-template-columns: 100px 1fr;
+  gap: 0 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.meal-row:first-of-type { border-top: none; }
+.meal-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--muted);
+  padding-top: 2px;
+  white-space: nowrap;
+}
+.meal-time .meal-emoji {
+  font-size: 16px;
+  margin-right: 4px;
+}
+.meal-title {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+.meal-desc {
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-bottom: 8px;
+}
+.meal-desc strong { color: var(--text); font-weight: 500; }
+
+/* ===== MACRO TAGS ===== */
+.macros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.macro-tag {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 100px;
+  letter-spacing: 0.3px;
+}
+.macro-kcal { background: rgba(234,179,8,0.12); color: #ca8a04; }
+.macro-p { background: rgba(34,197,94,0.12); color: #16a34a; }
+.macro-c { background: rgba(59,130,246,0.12); color: #3b82f6; }
+.macro-g { background: rgba(249,115,22,0.12); color: #ea580c; }
+
+@media (prefers-color-scheme: dark) {
+  .macro-kcal { background: rgba(234,179,8,0.15); color: #facc15; }
+  .macro-p { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .macro-c { background: rgba(59,130,246,0.15); color: #60a5fa; }
+  .macro-g { background: rgba(249,115,22,0.15); color: #fb923c; }
+}
+
+/* ===== ALCOHOL NOTE ===== */
+.note-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px 24px;
+  margin-bottom: 16px;
+}
+.note-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+.note-card ul {
+  list-style: none;
+  padding: 0;
+}
+.note-card li {
+  font-size: 13px;
+  color: var(--muted);
+  padding: 3px 0;
+  padding-left: 16px;
+  position: relative;
+}
+.note-card li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* ===== SUPPLEMENT CARDS ===== */
+.supp-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.supp-card-header {
+  margin-bottom: 16px;
+}
+.supp-card-title {
+  font-size: 17px;
+  font-weight: 700;
+}
+.supp-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.supp-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 6px 14px;
+  border-radius: 100px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.supp-pill:hover { border-color: var(--accent); }
+.supp-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-green { background: #22c55e; }
+.dot-blue { background: #3b82f6; }
+.dot-purple { background: #a855f7; }
+.dot-amber { background: #f59e0b; }
+.dot-rose { background: #f43f5e; }
+.dot-cyan { background: #06b6d4; }
+.dot-pink { background: #ec4899; }
+.dot-indigo { background: #6366f1; }
+.dot-emerald { background: #10b981; }
+.dot-orange { background: #f97316; }
+.dot-teal { background: #14b8a6; }
+
+.badge-novo {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 6px;
+  background: rgba(249,115,22,0.15);
+  color: #ea580c;
+  margin-left: 2px;
+}
+@media (prefers-color-scheme: dark) {
+  .badge-novo { background: rgba(249,115,22,0.2); color: #fb923c; }
+}
+
+.supp-note {
+  margin-top: 12px;
+  font-size: 12px;
+  color: var(--muted);
+  font-style: italic;
+  padding-left: 14px;
+  border-left: 2px solid var(--accent);
+}
+
+/* ===== BOTTOM NAV (mobile) ===== */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  z-index: 100;
+}
+.bottom-nav-inner {
+  display: flex;
+  justify-content: space-around;
+  max-width: 500px;
+  margin: 0 auto;
+}
+.nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  font-family: 'Outfit', sans-serif;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  padding: 4px 12px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+.nav-btn.active { color: var(--accent); }
+.nav-btn .nav-icon { font-size: 20px; }
+
+@media (max-width: 640px) {
+  .bottom-nav { display: block; }
+  body { padding-bottom: 100px; }
+  .header { padding-top: 24px; }
+  .back-link { display: none; }
+  .tabs { padding-top: 16px; }
+  .meal-row {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .meal-time {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  .plan-card { padding: 18px 16px; }
+  .supp-card { padding: 18px 16px; }
+  .container { padding: 0 12px; }
+}
+
+/* ===== SECTION SPACER ===== */
+.section-space { height: 8px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <a href="../" class="back-link">&larr; Voltar ao menu</a>
+  <h1>Saude & Nutricao</h1>
+  <p class="subtitle">Andre Vasconcelos</p>
+</div>
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="alimentacao">🍽️ Alimentacao</button>
+  <button class="tab-btn" data-tab="suplementos">💊 Suplementos</button>
+</div>
+
+<div class="container">
+
+  <!-- ==================== TAB 1: ALIMENTACAO ==================== -->
+  <div class="tab-content active" id="alimentacao">
+
+    <!-- DIA DE TREINO -->
+    <div class="plan-card">
+      <div class="plan-card-header">
+        <span class="plan-card-title">🏋️ Dia de Treino (Musculacao)</span>
+        <span class="plan-card-kcal">~2,150 kcal</span>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">💊</span> 7 AM</div>
+        <div>
+          <div class="meal-title">SAMe (Jejum)</div>
+          <div class="meal-desc">1 caps SAMe 400mg + 1 copo agua (300ml). Esperar 30min.</div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍳</span> 7:30-8</div>
+        <div>
+          <div class="meal-title">Cafe da Manha</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> 3 ovos mexidos + pao integral + abacate + cafe.<br>
+            <strong>Op2:</strong> Tapioca + frango + mucarela + banana.<br>
+            <strong>Op3:</strong> Ovos + aveia + banana + cafe.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">500 kcal</span>
+            <span class="macro-tag macro-p">35P</span>
+            <span class="macro-tag macro-c">35C</span>
+            <span class="macro-tag macro-g">22G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🥜</span> 10:30</div>
+        <div>
+          <div class="meal-title">Lanche</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Castanhas 30g + maca.<br>
+            <strong>Op2:</strong> Iogurte grego + granola + morangos.<br>
+            <strong>Op3:</strong> Banana + pasta de amendoim.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">250 kcal</span>
+            <span class="macro-tag macro-p">10P</span>
+            <span class="macro-tag macro-c">25C</span>
+            <span class="macro-tag macro-g">12G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍛</span> 12:30</div>
+        <div>
+          <div class="meal-title">Almoco</div>
+          <div class="meal-desc">Arroz 4 col + feijao 1 concha + proteina 150g + salada + azeite.</div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">650 kcal</span>
+            <span class="macro-tag macro-p">45P</span>
+            <span class="macro-tag macro-c">60C</span>
+            <span class="macro-tag macro-g">18G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍌</span> 5:30 PM</div>
+        <div>
+          <div class="meal-title">Pre-treino</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Banana + pasta amendoim.<br>
+            <strong>Op2:</strong> Barra proteina.<br>
+            <strong>Op3:</strong> Pao + mel.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">200 kcal</span>
+            <span class="macro-tag macro-p">8P</span>
+            <span class="macro-tag macro-c">30C</span>
+            <span class="macro-tag macro-g">8G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🏋️</span> 6-7 PM</div>
+        <div>
+          <div class="meal-title">Treino</div>
+          <div class="meal-desc">Agua 500ml+. BCAA opcional.</div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🥤</span> 7:15 PM</div>
+        <div>
+          <div class="meal-title">Pos-treino</div>
+          <div class="meal-desc">Whey + banana + leite + creatina 5g.</div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">300 kcal</span>
+            <span class="macro-tag macro-p">30P</span>
+            <span class="macro-tag macro-c">35C</span>
+            <span class="macro-tag macro-g">5G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🌙</span> 8:30 PM</div>
+        <div>
+          <div class="meal-title">Jantar</div>
+          <div class="meal-desc">
+            Frango + batata doce + brocolis <strong>OU</strong> omelete + legumes <strong>OU</strong> carne moida + arroz integral + salada.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">500 kcal</span>
+            <span class="macro-tag macro-p">40P</span>
+            <span class="macro-tag macro-c">40C</span>
+            <span class="macro-tag macro-g">15G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">😴</span> 9:30 PM</div>
+        <div>
+          <div class="meal-title">Ceia</div>
+          <div class="meal-desc">Cha camomila. Opcional: castanhas OU cottage.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIA DE CORRIDA -->
+    <div class="plan-card">
+      <div class="plan-card-header">
+        <span class="plan-card-title">🏃 Dia de Corrida</span>
+        <span class="plan-card-kcal">~2,150 kcal</span>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">💊</span> 7 AM</div>
+        <div>
+          <div class="meal-title">SAMe (Jejum)</div>
+          <div class="meal-desc">1 caps SAMe 400mg + 1 copo agua (300ml). Esperar 30min.</div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍳</span> 7:30-8</div>
+        <div>
+          <div class="meal-title">Cafe da Manha</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Aveia + banana + mel + cafe.<br>
+            <strong>Op2:</strong> Tapioca + ovo + suco natural.<br>
+            <strong>Op3:</strong> Pao integral + pasta amendoim + fruta.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">450 kcal</span>
+            <span class="macro-tag macro-p">20P</span>
+            <span class="macro-tag macro-c">55C</span>
+            <span class="macro-tag macro-g">12G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🥜</span> 10:30</div>
+        <div>
+          <div class="meal-title">Lanche</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Banana + castanhas.<br>
+            <strong>Op2:</strong> Iogurte grego + granola.<br>
+            <strong>Op3:</strong> Barra de cereais + fruta.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">250 kcal</span>
+            <span class="macro-tag macro-p">10P</span>
+            <span class="macro-tag macro-c">30C</span>
+            <span class="macro-tag macro-g">10G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍛</span> 12:30</div>
+        <div>
+          <div class="meal-title">Almoco</div>
+          <div class="meal-desc">Arroz 4 col + feijao 1 concha + proteina 150g + salada + azeite.</div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">650 kcal</span>
+            <span class="macro-tag macro-p">45P</span>
+            <span class="macro-tag macro-c">60C</span>
+            <span class="macro-tag macro-g">18G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍌</span> 4:30 PM</div>
+        <div>
+          <div class="meal-title">Pre-corrida</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Banana + mel.<br>
+            <strong>Op2:</strong> Torrada + geleia.<br>
+            <strong>Op3:</strong> Suco natural + biscoito integral.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">200 kcal</span>
+            <span class="macro-tag macro-p">5P</span>
+            <span class="macro-tag macro-c">40C</span>
+            <span class="macro-tag macro-g">3G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🏃</span> 5-6 PM</div>
+        <div>
+          <div class="meal-title">Corrida</div>
+          <div class="meal-desc">Agua 500ml+. Isotônico se >45min.</div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🥤</span> 6:15 PM</div>
+        <div>
+          <div class="meal-title">Pos-corrida</div>
+          <div class="meal-desc">Whey + banana + leite + creatina 5g.</div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">300 kcal</span>
+            <span class="macro-tag macro-p">30P</span>
+            <span class="macro-tag macro-c">35C</span>
+            <span class="macro-tag macro-g">5G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🌙</span> 8 PM</div>
+        <div>
+          <div class="meal-title">Jantar</div>
+          <div class="meal-desc">
+            Massa integral + frango <strong>OU</strong> peixe + batata + legumes <strong>OU</strong> sopa de legumes com proteina.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">550 kcal</span>
+            <span class="macro-tag macro-p">40P</span>
+            <span class="macro-tag macro-c">50C</span>
+            <span class="macro-tag macro-g">15G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">😴</span> 9:30 PM</div>
+        <div>
+          <div class="meal-title">Ceia</div>
+          <div class="meal-desc">Cha camomila. Opcional: castanhas OU cottage.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DIA OFF -->
+    <div class="plan-card">
+      <div class="plan-card-header">
+        <span class="plan-card-title">🛋️ Dia OFF (Low Carb)</span>
+        <span class="plan-card-kcal">~1,900 kcal</span>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">💊</span> 7 AM</div>
+        <div>
+          <div class="meal-title">SAMe (Jejum)</div>
+          <div class="meal-desc">1 caps SAMe 400mg + 1 copo agua (300ml). Esperar 30min.</div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍳</span> 8 AM</div>
+        <div>
+          <div class="meal-title">Cafe da Manha</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> 3 ovos mexidos + abacate + cafe.<br>
+            <strong>Op2:</strong> Omelete + queijo + espinafre.<br>
+            <strong>Op3:</strong> Iogurte grego + castanhas + canela.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">450 kcal</span>
+            <span class="macro-tag macro-p">30P</span>
+            <span class="macro-tag macro-c">12C</span>
+            <span class="macro-tag macro-g">30G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🥜</span> 10:30</div>
+        <div>
+          <div class="meal-title">Lanche</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Castanhas 30g + queijo branco.<br>
+            <strong>Op2:</strong> Abacate com cacau.<br>
+            <strong>Op3:</strong> Ovos cozidos + azeite.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">250 kcal</span>
+            <span class="macro-tag macro-p">12P</span>
+            <span class="macro-tag macro-c">8C</span>
+            <span class="macro-tag macro-g">18G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🍛</span> 12:30</div>
+        <div>
+          <div class="meal-title">Almoco</div>
+          <div class="meal-desc">Proteina 150g + salada grande + legumes refogados + azeite. Sem arroz/feijao.</div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">550 kcal</span>
+            <span class="macro-tag macro-p">45P</span>
+            <span class="macro-tag macro-c">15C</span>
+            <span class="macro-tag macro-g">30G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">☕</span> 3:30 PM</div>
+        <div>
+          <div class="meal-title">Lanche da Tarde</div>
+          <div class="meal-desc">
+            <strong>Op1:</strong> Cafe + castanhas.<br>
+            <strong>Op2:</strong> Cottage + nozes.<br>
+            <strong>Op3:</strong> Cha verde + chocolate 85%.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">200 kcal</span>
+            <span class="macro-tag macro-p">10P</span>
+            <span class="macro-tag macro-c">6C</span>
+            <span class="macro-tag macro-g">15G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">🌙</span> 7:30 PM</div>
+        <div>
+          <div class="meal-title">Jantar</div>
+          <div class="meal-desc">
+            Salmao + legumes assados <strong>OU</strong> frango + couve-flor gratinada <strong>OU</strong> carne + salada quente.
+          </div>
+          <div class="macros">
+            <span class="macro-tag macro-kcal">500 kcal</span>
+            <span class="macro-tag macro-p">40P</span>
+            <span class="macro-tag macro-c">10C</span>
+            <span class="macro-tag macro-g">30G</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="meal-row">
+        <div class="meal-time"><span class="meal-emoji">😴</span> 9:30 PM</div>
+        <div>
+          <div class="meal-title">Ceia</div>
+          <div class="meal-desc">Cha camomila. Opcional: castanhas OU cottage.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ALCOHOL NOTE -->
+    <div class="note-card">
+      <div class="note-card-title">🍷 Alcool (Sex/Sab)</div>
+      <ul>
+        <li>Vinho tinto ou destilado</li>
+        <li>Max 1-2 doses</li>
+        <li>Proteina antes de beber</li>
+        <li>1 copo agua entre doses</li>
+        <li>Dormir 30min mais cedo</li>
+      </ul>
+    </div>
+
+  </div>
+
+  <!-- ==================== TAB 2: SUPLEMENTOS ==================== -->
+  <div class="tab-content" id="suplementos">
+
+    <!-- JEJUM -->
+    <div class="supp-card">
+      <div class="supp-card-header">
+        <div class="supp-card-title">☀️ Jejum — 7 AM</div>
+      </div>
+      <div class="supp-pills">
+        <span class="supp-pill"><span class="supp-dot dot-amber"></span>SAMe 400mg</span>
+      </div>
+      <div class="supp-note">Tomar com copo grande de agua. Esperar 30min antes de comer.</div>
+    </div>
+
+    <!-- CAFE DA MANHA -->
+    <div class="supp-card">
+      <div class="supp-card-header">
+        <div class="supp-card-title">🍳 Cafe da Manha — 7:30-8 AM</div>
+      </div>
+      <div class="supp-pills">
+        <span class="supp-pill"><span class="supp-dot dot-blue"></span>Omega-3 Plus</span>
+        <span class="supp-pill"><span class="supp-dot dot-rose"></span>CoQ10 Ubiquinol 100mg</span>
+        <span class="supp-pill"><span class="supp-dot dot-green"></span>Vitamin K2 (MK-7)</span>
+        <span class="supp-pill"><span class="supp-dot dot-amber"></span>Curcumin Elite</span>
+        <span class="supp-pill"><span class="supp-dot dot-purple"></span>Pycnogenol 100mg</span>
+        <span class="supp-pill"><span class="supp-dot dot-orange"></span>L-Carnitine 500mg</span>
+        <span class="supp-pill"><span class="supp-dot dot-pink"></span>B12 1mg (sublingual)</span>
+        <span class="supp-pill"><span class="supp-dot dot-indigo"></span>Quick Brain Nootropic</span>
+        <span class="supp-pill"><span class="supp-dot dot-emerald"></span>Digest Complete</span>
+        <span class="supp-pill"><span class="supp-dot dot-teal"></span>L-Theanine 200mg (com cafe) <span class="badge-novo">NOVO</span></span>
+        <span class="supp-pill"><span class="supp-dot dot-cyan"></span>Creatina 5g</span>
+      </div>
+      <div class="supp-note">Tomar COM a refeicao.</div>
+    </div>
+
+    <!-- ALMOCO -->
+    <div class="supp-card">
+      <div class="supp-card-header">
+        <div class="supp-card-title">🍛 Almoco — 12:30 PM</div>
+      </div>
+      <div class="supp-pills">
+        <span class="supp-pill"><span class="supp-dot dot-green"></span>Berberine 500mg <span class="badge-novo">NOVO</span></span>
+        <span class="supp-pill"><span class="supp-dot dot-blue"></span>Multi One-Per-Day</span>
+        <span class="supp-pill"><span class="supp-dot dot-purple"></span>Optimized Folate</span>
+      </div>
+    </div>
+
+    <!-- NOITE -->
+    <div class="supp-card">
+      <div class="supp-card-header">
+        <div class="supp-card-title">🌙 Noite — 9:30 PM</div>
+      </div>
+      <div class="supp-pills">
+        <span class="supp-pill"><span class="supp-dot dot-indigo"></span>Neuro-Mag (Mg L-Threonate)</span>
+        <span class="supp-pill"><span class="supp-dot dot-amber"></span>Ashwagandha</span>
+        <span class="supp-pill"><span class="supp-dot dot-rose"></span>NAC 600mg</span>
+        <span class="supp-pill"><span class="supp-dot dot-emerald"></span>Glutathione/Cysteine/C</span>
+        <span class="supp-pill"><span class="supp-dot dot-cyan"></span>Citicoline</span>
+        <span class="supp-pill"><span class="supp-dot dot-green"></span>Berberine 500mg (2a dose) <span class="badge-novo">NOVO</span></span>
+      </div>
+      <div class="supp-note">Tomar com cha de camomila.</div>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- BOTTOM NAV (mobile) -->
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <button class="nav-btn active" data-tab="alimentacao">
+      <span class="nav-icon">🍽️</span>
+      Alimentacao
+    </button>
+    <button class="nav-btn" data-tab="suplementos">
+      <span class="nav-icon">💊</span>
+      Suplementos
+    </button>
+    <a class="nav-btn" href="../">
+      <span class="nav-icon">←</span>
+      Menu
+    </a>
+  </div>
+</nav>
+
+<script>
+(function() {
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  const navBtns = document.querySelectorAll('.nav-btn[data-tab]');
+  const contents = document.querySelectorAll('.tab-content');
+
+  function switchTab(tabId) {
+    contents.forEach(c => c.classList.remove('active'));
+    tabBtns.forEach(b => b.classList.remove('active'));
+    navBtns.forEach(b => b.classList.remove('active'));
+
+    document.getElementById(tabId).classList.add('active');
+    tabBtns.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
+    navBtns.forEach(b => { if (b.dataset.tab === tabId) b.classList.add('active'); });
+
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+  navBtns.forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+
+  // Check URL hash
+  if (window.location.hash === '#suplementos') {
+    switchTab('suplementos');
+  }
+})();
+</script>
+</body>
+</html>

@@ -12,30 +12,66 @@
   --text: #1a1d2e;
   --muted: #8891a6;
   --border: #e4e8f1;
-  --radius: 20px;
+  --radius: 18px;
+  --shadow: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-hover: 0 12px 36px rgba(0,0,0,0.1);
 }
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0a0a0c;
+    --surface: #141418;
+    --text: #e8e8ed;
+    --muted: #9898a8;
+    --border: #2a2a34;
+    --shadow: 0 2px 8px rgba(0,0,0,0.2);
+    --shadow-hover: 0 12px 36px rgba(0,0,0,0.4);
+  }
+}
+
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'Outfit', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; -webkit-font-smoothing: antialiased; }
-.container { width: 100%; max-width: 720px; text-align: center; }
+body {
+  font-family: 'Outfit', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 48px 24px;
+  -webkit-font-smoothing: antialiased;
+}
+.container { width: 100%; max-width: 760px; margin: 0 auto; }
 
 /* HEADER */
-.avatar { width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #3b7ddd, #22c55e); display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; font-size: 34px; color: #fff; font-weight: 800; letter-spacing: -1px; box-shadow: 0 6px 24px rgba(59,125,221,0.2); }
-h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
-.subtitle { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 36px; }
+.header { text-align: center; margin-bottom: 48px; }
+.avatar {
+  width: 84px; height: 84px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #3b7ddd, #22c55e);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 34px; color: #fff; font-weight: 800; letter-spacing: -1px;
+  box-shadow: 0 6px 24px rgba(59,125,221,0.25);
+  margin-bottom: 20px;
+}
+h1 { font-size: 30px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 6px; }
+.subtitle {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 2.5px;
+}
 
-/* CARDS */
-.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 32px; }
+/* CARDS GRID */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 56px; }
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 32px 24px 28px;
+  padding: 32px 24px 26px;
   text-decoration: none;
   color: var(--text);
-  transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  box-shadow: var(--shadow);
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .card::before {
   content: '';
@@ -45,69 +81,300 @@ h1 { font-size: 28px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4
   border-radius: var(--radius) var(--radius) 0 0;
   transition: height 0.3s ease;
 }
-.card:hover { transform: translateY(-4px); box-shadow: 0 12px 36px rgba(0,0,0,0.1); }
+.card:hover { transform: translateY(-4px); box-shadow: var(--shadow-hover); }
 .card:hover::before { height: 6px; }
 
-.card-treino::before { background: linear-gradient(90deg, #22c55e, #16a34a); }
-.card-treino:hover { border-color: #22c55e; }
-.card-saude::before { background: linear-gradient(90deg, #3b7ddd, #6366f1); }
-.card-saude:hover { border-color: #3b7ddd; }
+.card-treino::before  { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.card-treino:hover    { border-color: #22c55e; }
+.card-nutricao::before { background: linear-gradient(90deg, #f97316, #ea580c); }
+.card-nutricao:hover   { border-color: #f97316; }
+.card-exames::before  { background: linear-gradient(90deg, #3b7ddd, #6366f1); }
+.card-exames:hover    { border-color: #3b7ddd; }
+.card-metas::before   { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+.card-metas:hover     { border-color: #a855f7; }
 
-.card-icon { font-size: 40px; margin-bottom: 14px; }
-.card-title { font-size: 19px; font-weight: 700; margin-bottom: 6px; }
-.card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; }
+.card-icon { font-size: 38px; margin-bottom: 14px; }
+.card-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+.card-desc { font-size: 13px; color: var(--muted); line-height: 1.6; flex: 1; }
 .card-badge {
   display: inline-block;
-  margin-top: 14px;
+  margin-top: 16px;
   padding: 4px 12px;
   border-radius: 20px;
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
+  font-size: 10px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  width: fit-content;
 }
-.badge-green { background: rgba(34,197,94,0.1); color: #16a34a; }
-.badge-blue { background: rgba(59,125,221,0.1); color: #3b7ddd; }
+.badge-green  { background: rgba(34,197,94,0.12); color: #16a34a; }
+.badge-orange { background: rgba(249,115,22,0.12); color: #ea580c; }
+.badge-blue   { background: rgba(59,125,221,0.12); color: #3b7ddd; }
+.badge-purple { background: rgba(168,85,247,0.12); color: #a855f7; }
+
+@media (prefers-color-scheme: dark) {
+  .badge-green  { background: rgba(34,197,94,0.15); color: #4ade80; }
+  .badge-orange { background: rgba(249,115,22,0.15); color: #fb923c; }
+  .badge-blue   { background: rgba(59,125,221,0.15); color: #60a5fa; }
+  .badge-purple { background: rgba(168,85,247,0.15); color: #c084fc; }
+}
+
 .card-lock { font-size: 12px; color: var(--muted); margin-top: 6px; }
 
+/* METAS SECTION */
+.section-title {
+  font-size: 24px; font-weight: 700; letter-spacing: -0.3px;
+  margin-bottom: 24px;
+}
+.metas-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 56px; }
+.meta-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+.meta-card-title { font-size: 16px; font-weight: 700; margin-bottom: 16px; }
+.meta-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 13px; color: var(--muted); margin-bottom: 8px;
+}
+.meta-row .value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 500; color: var(--text);
+}
+.progress-track {
+  width: 100%; height: 8px;
+  background: var(--border); border-radius: 4px;
+  margin-top: 12px; overflow: hidden;
+}
+.progress-fill {
+  height: 100%; border-radius: 4px;
+  transition: width 0.4s ease;
+}
+.progress-green  { background: linear-gradient(90deg, #22c55e, #16a34a); }
+.progress-orange { background: linear-gradient(90deg, #f97316, #ea580c); }
+.progress-purple { background: linear-gradient(90deg, #a855f7, #7c3aed); }
+.progress-blue   { background: linear-gradient(90deg, #3b7ddd, #6366f1); }
+
+.meta-input {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px; font-weight: 500;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 4px 8px;
+  width: 64px;
+  text-align: right;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.meta-input:focus { border-color: #3b7ddd; }
+
+.meta-tag {
+  display: inline-block;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 10px;
+  border-radius: 12px;
+  margin-bottom: 6px;
+}
+.tag-red    { background: rgba(239,68,68,0.12); color: #ef4444; }
+.tag-yellow { background: rgba(234,179,8,0.12); color: #ca8a04; }
+
+@media (prefers-color-scheme: dark) {
+  .tag-red    { background: rgba(239,68,68,0.15); color: #f87171; }
+  .tag-yellow { background: rgba(234,179,8,0.15); color: #facc15; }
+}
+
 /* FOOTER */
-.footer { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--muted); letter-spacing: 0.5px; }
-.footer a { color: var(--muted); text-decoration: none; }
+.footer {
+  text-align: center;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: var(--muted); letter-spacing: 0.5px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-bottom: 24px;
+}
+.footer a { color: var(--muted); text-decoration: none; transition: color 0.2s; }
 .footer a:hover { color: var(--text); }
 
-@media(max-width:520px) {
-  .cards { grid-template-columns: 1fr; }
+/* RESPONSIVE */
+@media (max-width: 560px) {
+  body { padding: 32px 16px; }
+  .cards, .metas-grid { grid-template-columns: 1fr; }
   h1 { font-size: 24px; }
+  .header { margin-bottom: 36px; }
+  .cards { margin-bottom: 40px; }
 }
 </style>
 </head>
 <body>
 <div class="container">
-  <div class="avatar">AV</div>
-  <h1>Andre Vasconcelos</h1>
-  <p class="subtitle">Hub Pessoal</p>
 
+  <!-- HEADER -->
+  <div class="header">
+    <div class="avatar">AV</div>
+    <h1>Andre Vasconcelos</h1>
+    <p class="subtitle">Hub Pessoal</p>
+  </div>
+
+  <!-- CARDS -->
   <div class="cards">
     <a class="card card-treino" href="https://andrenvasc.github.io/plano-treino/">
       <div class="card-icon">🏋️</div>
-      <div class="card-title">Treino & Dieta</div>
-      <div class="card-desc">Plano de treino, alimentacao, suplementos e metas</div>
+      <div class="card-title">Treino</div>
+      <div class="card-desc">Plano semanal, exercícios, séries e progressão</div>
       <span class="card-badge badge-green">Aberto</span>
     </a>
 
-    <a class="card card-saude" href="exames/">
+    <a class="card card-nutricao" href="nutricao/">
+      <div class="card-icon">🍽️</div>
+      <div class="card-title">Saúde &amp; Nutrição</div>
+      <div class="card-desc">Suplementação, dieta e hábitos de saúde</div>
+      <span class="card-badge badge-orange">Aberto</span>
+    </a>
+
+    <a class="card card-exames" href="exames/">
       <div class="card-icon">🩺</div>
-      <div class="card-title">Saude & Exames</div>
-      <div class="card-desc">Historico completo de exames medicos desde 1997</div>
+      <div class="card-title">Exames</div>
+      <div class="card-desc">Histórico completo de exames médicos desde 1997</div>
       <span class="card-badge badge-blue">Protegido</span>
       <div class="card-lock">🔒 Requer login</div>
     </a>
+
+    <a class="card card-metas" href="#metas">
+      <div class="card-icon">🎯</div>
+      <div class="card-title">Metas</div>
+      <div class="card-desc">Dashboard de progresso — treino, peso e saúde</div>
+      <span class="card-badge badge-purple">Aberto</span>
+    </a>
   </div>
 
+  <!-- METAS -->
+  <section id="metas">
+    <h2 class="section-title">🎯 Metas</h2>
+    <div class="metas-grid">
+
+      <!-- 5K -->
+      <div class="meta-card">
+        <div class="meta-card-title">🏃 5K sub-30 min</div>
+        <div class="meta-row">
+          <span>Pace atual</span>
+          <span class="value">6:30/km</span>
+        </div>
+        <div class="meta-row">
+          <span>Pace meta</span>
+          <span class="value">5:59/km</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill progress-green" style="width: 72%"></div>
+        </div>
+      </div>
+
+      <!-- Peso -->
+      <div class="meta-card">
+        <div class="meta-card-title">⚖️ Peso</div>
+        <div class="meta-row">
+          <span>Atual (kg)</span>
+          <input class="meta-input" type="number" id="weightCurrent" step="0.1" min="40" max="200">
+        </div>
+        <div class="meta-row">
+          <span>Meta (kg)</span>
+          <input class="meta-input" type="number" id="weightGoal" step="0.1" min="40" max="200">
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill progress-orange" id="weightProgress" style="width: 0%"></div>
+        </div>
+      </div>
+
+      <!-- Hipertrofia -->
+      <div class="meta-card">
+        <div class="meta-card-title">💪 Hipertrofia</div>
+        <div class="meta-row">
+          <span>Déficit calórico</span>
+          <span class="value">-400 kcal/dia</span>
+        </div>
+        <div class="meta-row">
+          <span>Proteína diária</span>
+          <span class="value">155g</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-fill progress-purple" style="width: 80%"></div>
+        </div>
+      </div>
+
+      <!-- Saude -->
+      <div class="meta-card">
+        <div class="meta-card-title">🩸 Saúde</div>
+        <div class="meta-row">
+          <span>LDL</span>
+          <span class="value">142 mg/dL</span>
+        </div>
+        <div class="meta-row" style="margin-bottom: 2px;">
+          <span>Meta</span>
+          <span class="value">&lt; 100 mg/dL</span>
+        </div>
+        <span class="meta-tag tag-red">Acima</span>
+        <div class="meta-row" style="margin-top: 12px;">
+          <span>ApoB</span>
+          <span class="value">115 mg/dL</span>
+        </div>
+        <div class="meta-row" style="margin-bottom: 2px;">
+          <span>Meta</span>
+          <span class="value">&lt; 90 mg/dL</span>
+        </div>
+        <span class="meta-tag tag-yellow">Em progresso</span>
+        <div class="progress-track" style="margin-top: 12px;">
+          <div class="progress-fill progress-blue" style="width: 45%"></div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FOOTER -->
   <div class="footer">
-    <a href="https://github.com/andrenvasc" target="_blank">github.com/andrenvasc</a>
+    <a href="https://github.com/andrenvasc" target="_blank" rel="noopener">github.com/andrenvasc</a>
   </div>
+
 </div>
+
+<script>
+(function() {
+  const weightInput = document.getElementById('weightCurrent');
+  const goalInput = document.getElementById('weightGoal');
+  const progressBar = document.getElementById('weightProgress');
+
+  // Load from localStorage or use defaults
+  const savedWeight = localStorage.getItem('hub_weight');
+  const savedGoal = localStorage.getItem('hub_goalWeight');
+  weightInput.value = savedWeight !== null ? savedWeight : '72';
+  goalInput.value = savedGoal !== null ? savedGoal : '68';
+
+  function updateProgress() {
+    const current = parseFloat(weightInput.value) || 72;
+    const goal = parseFloat(goalInput.value) || 68;
+    // Assume a start weight 10kg above goal as reference
+    const start = goal + 10;
+    const lost = start - current;
+    const total = start - goal;
+    const pct = Math.max(0, Math.min(100, (lost / total) * 100));
+    progressBar.style.width = pct.toFixed(0) + '%';
+  }
+
+  weightInput.addEventListener('input', function() {
+    localStorage.setItem('hub_weight', this.value);
+    updateProgress();
+  });
+
+  goalInput.addEventListener('input', function() {
+    localStorage.setItem('hub_goalWeight', this.value);
+    updateProgress();
+  });
+
+  updateProgress();
+})();
+</script>
 </body>
 </html>
